@@ -77,3 +77,4 @@ memory/documents/*
 # === end Tessl-generated artifacts ===
 .kotlin/
 pipeline.mmd
+pipeline-native.mmd

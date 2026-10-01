@@ -186,14 +186,13 @@ fun main(args: Array<String>) {
                     },
                     send = {
                         deliveryAttempted = true
-                        val receipt = mcp.sendDecline(ready)
-                        tui.chat("j-claw: delivered. $receipt", ChatKind.OK)
-                        conversation.assistant("Delivered. Organizer receipt: $receipt")
-                        try {
-                            memory.add(listOf(Memory.story(ready.request.eventId, ready.request.organizerName, it.flavor.name, it.messageToOrganizer)))
-                        } catch (error: Exception) {
-                            tui.chat("Delivered, but could not save to memory: ${error.message}", ChatKind.ERR)
-                        }
+                        sendAndRemember(ready, mcp, memory,
+                            onDelivered = { receipt ->
+                                tui.chat("j-claw: delivered. $receipt", ChatKind.OK)
+                                conversation.assistant("Delivered. Organizer receipt: $receipt")
+                            },
+                            onMemoryFailure = { tui.chat("Delivered, but could not save to memory: ${it.message}", ChatKind.ERR) },
+                        )
                     },
                 )
                 if (!delivered) {

@@ -7,7 +7,11 @@ import ai.koog.agents.mcp.defaultStdioTransport
 import io.modelcontextprotocol.kotlin.sdk.client.Client
 import io.modelcontextprotocol.kotlin.sdk.types.Implementation
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import jclaw.domain.DeclineReceipt
+import jclaw.domain.DeclineRequest
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import java.io.File
 
 /**
@@ -37,6 +41,18 @@ class Mcp private constructor(
         return confirmedReceipt(call("organizer-mcp", "sendDecline", args), expected)
     }
 
+    /** Resolve identity from the selected calendar record before review and human approval. */
+    suspend fun canonicalRequest(request: DeclineRequest): DeclineRequest {
+        val result = requireNotNull(call("calendar-mcp", "getCalendar", emptyMap())) { "Calendar returned no result" }
+        check(result.isError != true) { "Calendar lookup failed" }
+        val payload = result.structuredContent?.toString() ?: result.content.filterIsInstance<TextContent>()
+            .singleOrNull()?.text ?: error("Calendar returned no unambiguous event list")
+        val target = calendarJson.decodeFromString<List<CalendarTarget>>(payload)
+            .singleOrNull { it.id == request.eventId } ?: error("Selected event is absent or ambiguous on the calendar")
+        check(target.organizer.isNotBlank()) { "Selected event has no organizer" }
+        return request.copy(organizerName = target.organizer)
+    }
+
     /**
      * Kills the child processes. Deliberately does NOT await `Client.close()`:
      * Protocol.close() does not return once the transport is gone, and it blocks a
@@ -55,13 +71,18 @@ class Mcp private constructor(
     }
 
     companion object {
+        private val calendarJson = Json { ignoreUnknownKeys = true }
         private val javaBin = File(System.getProperty("java.home"), "bin/java").absolutePath
 
         /** Gradle passes this; the start script falls back to the repo layout. */
         private val mocksDir: String =
             System.getProperty("jclaw.mocks") ?: "mocks/build/libs"
 
-        suspend fun boot(vararg servers: String, onStderr: (String) -> Unit = System.err::println): Mcp {
+        suspend fun boot(
+            vararg servers: String,
+            environment: Map<String, String> = emptyMap(),
+            onStderr: (String) -> Unit = System.err::println,
+        ): Mcp {
             val procs = mutableListOf<Process>()
             val clients = mutableMapOf<String, Client>()
             var registry = ToolRegistry.EMPTY
@@ -77,6 +98,7 @@ class Mcp private constructor(
                 // daemon thread: same visible trace lines, no shared descriptor. The TUI
                 // front end passes a sink that files them in its TRACE pane.
                 val proc = ProcessBuilder(javaBin, "-jar", jar.absolutePath)
+                    .apply { environment().putAll(environment) }
                     .redirectErrorStream(false)
                     .start()
                 procs += proc
@@ -104,3 +126,6 @@ class Mcp private constructor(
         }
     }
 }
+
+@Serializable
+private data class CalendarTarget(val id: String, val organizer: String)

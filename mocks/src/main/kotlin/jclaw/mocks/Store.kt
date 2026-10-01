@@ -13,7 +13,7 @@ data class CalendarEvent(
 )
 
 /**
- * Canned state, shared by both mock servers. Three sessions from the same
+ * Fictional Tuesday October 6 fixture, shared by both mock servers. Three sessions from the same
  * organizer are already declined on the calendar. A calendar records THAT you
  * bailed, never why; the story told each time lives in the agent's memory
  * (memory/documents/), and that gap is the whole of round 3.
@@ -25,7 +25,7 @@ object Store {
         CalendarEvent(
             id = "basic-ai-proficiency-2026",
             title = "Basic AI Proficiency Training (Mandatory)",
-            start = "2026-09-08T15:00:00+02:00",
+            start = "2026-10-06T15:00:00+02:00",
             organizer = "Dana from People Ops",
         ),
         CalendarEvent(

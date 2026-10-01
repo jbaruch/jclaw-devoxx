@@ -7,7 +7,7 @@ usage() {
   cat <<'HELP'
 Usage: ./jclaw [workflow|guardrails|observability] [tui|plain]
        ./jclaw skills [intensity] 'source message'
-       ./jclaw graph
+       ./jclaw graph [native]
        ./jclaw codex
        ./jclaw --help
 
@@ -16,7 +16,7 @@ guardrails     Round 6: human approval/rejection and validated mock delivery (de
 observability  Round 7: same guardrails path, with round-7 trace metadata.
 plain / tui    Guardrails on stdout / terminal UI.
 skills         Standalone corporate-speak runner; no delivery.
-graph          Generate pipeline.mmd from the live strategy.
+graph          Generate pipeline.mmd; add native for the native-helper teaching graph.
 codex          Probe typed Codex output.
 HELP
 }
@@ -37,7 +37,7 @@ case "$mode" in
 esac
 
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
-if [ -z "${GOOGLE_API_KEY:-}" ]; then
+if [ "$mode" != graph ] && [ -z "${GOOGLE_API_KEY:-}" ]; then
   echo "GOOGLE_API_KEY is not set. Put it in .env (see .env.example)." >&2
   exit 1
 fi
@@ -48,10 +48,16 @@ case "$mode" in
   *) export JCLAW_ROUND=6 JCLAW_REVIEW_ONLY=0 ;;
 esac
 
+# The app and Gradle wrapper use JDK 21; avoid inheriting an incompatible IDE JDK.
+if [ -x /usr/libexec/java_home ]; then
+  JAVA_HOME="$(/usr/libexec/java_home -F -v 21)"
+  export JAVA_HOME
+fi
+
 ./gradlew -q :app:installDist :mocks:mcpJars
 case "$mode" in
   skills) exec app/build/install/app/bin/app-skills "$@" ;;
-  graph) exec app/build/install/app/bin/app-graph ;;
+  graph) exec app/build/install/app/bin/app-graph "$@" ;;
   codex) exec app/build/install/app/bin/app-codex ;;
   *)
     if [ "$surface" = plain ]; then exec app/build/install/app/bin/app; fi

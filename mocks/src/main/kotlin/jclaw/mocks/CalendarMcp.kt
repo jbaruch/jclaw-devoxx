@@ -54,7 +54,7 @@ fun main() = runBlocking {
         ),
     ) { request ->
         val title = request.arguments?.get("title")?.jsonPrimitive?.content ?: "(untitled)"
-        val start = request.arguments?.get("startIso")?.jsonPrimitive?.content ?: "2026-09-08T20:00:00+02:00"
+        val start = request.arguments?.get("startIso")?.jsonPrimitive?.content ?: "2026-10-06T20:00:00+02:00"
         val id = Store.nextEventId()
         Store.calendar += CalendarEvent(id = id, title = title, start = start, organizer = "Baruch Sadogursky")
         System.err.println("[calendar-mcp] createCalendarEvent '$title' -> $id")

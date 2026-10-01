@@ -36,8 +36,9 @@ A prepared result used after failure must be identified as a rehearsal.
 1. Inspect identification, draft and the complete critic input.
 2. Follow the actual route: approve, refine up to twice, or block.
 3. Confirm the app stops at a reviewed proposal without asking for approval.
-4. Show native Koog task/verification helpers before the custom subscription-CLI
-   integration once that teaching example is built.
+4. Show NativeWorkflow.kt's native task/verification helpers before the custom
+   subscription-CLI integration. `./jclaw graph native` emits its actual topology
+   without provider calls. This small example begins with an identified request.
 
 ## Round 6: human loop and delivery
 
@@ -70,16 +71,18 @@ write currently remain outside the native agent trace; explain this boundary.
 Distinguish the coding agent reading the Koog framework skill during this build
 from running j-claw reading corporate-speak to answer a user. Show the skill read,
 the resulting code change and its compile/test result. BUILD-NOTES.md records
-the source versions and corrections; the plugin refresh issue remains open.
+the source versions and corrections. Plugin 0.6.0 includes the repairs from
+issue #31 / PR #32; the relevant updated guidance was reviewed against this build.
 
 ## Remaining rehearsal work
 
-- Finish the complete app and compile the native-helper teaching example.
+- See BUILD-NOTES.md for the completed live stdout runs, plugin 0.6.0 review and trace evidence.
+- Finish the complete app and terminal rehearsal; the native-helper example now compiles and passes graph tests.
 - Derive the seven step branches from the completed app by removing features.
-- Refresh or explicitly label the inherited dated calendar fixture.
-- Run actual Google, Claude and Codex transports with the intended model versions.
-- Exercise approval, substantive rejection, both refinement limits and unavailable critic.
-- Verify skill loading and projector readability in the TUI.
-- Verify live Langfuse export and agree comparable evidence with Viktor.
+- Use the refreshed fictional Tuesday October 6 fixture on both sides.
+- Rehearse the verified Google/Claude/Codex paths in the terminal; agree exact CLI model versions with Viktor.
+- Exercise the unavailable critic recovery on stage; approval, substantive rejection and the refinement limit have run live.
+- Verify projector readability in the TUI; runtime skill listing/reading has run live on stdout.
+- Walk the arrived Langfuse traces on the projector and agree comparable evidence with Viktor.
 - Build and rehearse the same workflow in Port.
 - Time the full sequence, prepare clearly labelled recovery checkpoints and final resources.

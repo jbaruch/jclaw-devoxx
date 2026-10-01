@@ -79,12 +79,10 @@ object CliCritic {
     internal const val CODEX_SYSTEM_PROMPT = "You are an independent reviewer of a proposed plan. " +
         "Assess its quality and return the requested structured result."
 
-    internal fun codexRequest(review: DeclineReview): String =
+    internal fun reviewTask(review: DeclineReview): String =
         """
         Baruch wants to get out of this obligation. Is this the best available
         excuse and plan for his situation? Assess the message and hallway script.
-        Set approved to true if the plan is ready for Baruch to consider sending;
-        otherwise explain what should improve. Select the appropriate tier.
         Judge the supplied plan and context; you have no tools or external actions.
 
         OBLIGATION: ${review.request.eventId}
@@ -100,6 +98,10 @@ object CliCritic {
         PROPOSED PLAN:
         ${review.plan}
         """.trimIndent()
+
+    internal fun codexRequest(review: DeclineReview): String = reviewTask(review) +
+        "\nSet approved=true only if this exact plan is ready for Baruch to consider sending; " +
+        "otherwise explain what should improve. Select the appropriate tier."
 
     /** The app-supplied prompt, before Codex adds its own CLI instructions. */
     internal fun codexPrompt(review: DeclineReview): String =

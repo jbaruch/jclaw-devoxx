@@ -37,7 +37,8 @@ fun jclawStrategy(
         readTools = Slices(mcp.registry).read, naive = naive, skills = skills,
         draft = { drafter.run(it).requirePlan() },
         refinePlan = { refiner.run(it).requirePlan() },
-        judgePlan = { judge.run(it) }, onStage = onStage, onReview = onReview,
+        judgePlan = { judge.run(it) }, resolveRequest = mcp::canonicalRequest,
+        onStage = onStage, onReview = onReview,
     )
 }
 
@@ -49,6 +50,7 @@ internal fun jclawStrategy(
     draft: suspend (DeclineRequest) -> DeclineDeployment,
     refinePlan: suspend (String) -> DeclineDeployment,
     judgePlan: suspend (DeclineReview) -> DeclineCritique,
+    resolveRequest: suspend (DeclineRequest) -> DeclineRequest = { it },
     onStage: (String, String, PipelineStageState) -> Unit = { _, _, _ -> },
     onReview: (ReviewEvent) -> Unit = {},
 ): AIAgentGraphStrategy<String, JclawResult> {
@@ -97,7 +99,7 @@ internal fun jclawStrategy(
         }
         val deploy by node<DeclineRequest, ReviewAttempt> { identified ->
             // The exact request must survive both model handoffs, even if an echo is incomplete.
-            val request = identified.copy(userInstruction = storage.getValue(turnInput))
+            val request = resolveRequest(identified.copy(userInstruction = storage.getValue(turnInput)))
             storage.set(draftRequest, request)
             val plan = cliStage("deploy", "Claude (subscription)") { draft(request) }
             ReviewAttempt(plan, request = request)

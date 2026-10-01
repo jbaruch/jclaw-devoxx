@@ -2,7 +2,6 @@ package jclaw
 
 import ai.koog.agents.core.agent.asMermaidDiagram
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.system.exitProcess
 import java.io.File
 
@@ -11,7 +10,7 @@ import java.io.File
  *
  * The JNation cut showed a hand-drawn diagram of this graph, and the honest
  * caveat on stage was "my diagram was static". This one is not: Koog walks the
- * actual strategy object - the same one round 4 just ran - and emits a Mermaid
+ * actual strategy object - the same one the app runs - and emits a Mermaid
  * state diagram. Change an edge and the picture changes, because there is no
  * picture, only the graph.
  *
@@ -19,7 +18,16 @@ import java.io.File
  *
  * Writes pipeline.mmd, which IntelliJ renders in the Markdown/Mermaid preview.
  */
-fun main(): Unit = runBlocking {
+fun main(args: Array<String>): Unit = runBlocking {
+    if (args.contentEquals(arrayOf("native"))) {
+        val diagram = nativeWorkflow(Models.flash, Models.flash).asMermaidDiagram()
+        val out = File(System.getProperty("jclaw.graph.out") ?: "pipeline-native.mmd")
+        out.writeText(diagram)
+        println(diagram)
+        System.err.println("\n[graph] native-helper example written to ${out.absolutePath}; no provider calls")
+        return@runBlocking
+    }
+    require(args.isEmpty()) { "Usage: graph [native]" }
     Mcp.boot("calendar-mcp", "organizer-mcp").use { mcp ->
         val strategy = jclawStrategy(
             mcp = mcp,

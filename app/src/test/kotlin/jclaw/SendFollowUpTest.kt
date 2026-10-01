@@ -53,7 +53,7 @@ class SendFollowUpTest : StringSpec({
         val original = DeclineDeployment(ExcuseFlavor.ALREADY_PROFICIENT, messageToOrganizer = "I already teach this subject.", hallwayScript = "I teach it.")
         val alternative = original.copy(flavor = ExcuseFlavor.DEADLINE, messageToOrganizer = "An alternative proposal.")
         val request = DeclineRequest(Scenario.EVENT_ID, Scenario.BURNED, Scenario.ATTENDEES, Scenario.ORGANIZER)
-        val identifiedRevision = request.copy(userInstruction = "incomplete model echo", previouslyProposedFlavors = listOf(original.flavor))
+        val identifiedRevision = request.copy(organizerName = "Dana", userInstruction = "incomplete model echo", previouslyProposedFlavors = listOf(original.flavor))
         val prompts = mutableListOf<Prompt>()
         val draftRequests = mutableListOf<DeclineRequest>()
         val refinements = mutableListOf<String>()
@@ -77,6 +77,7 @@ class SendFollowUpTest : StringSpec({
             llmModel = Models.flash, systemPrompt = conversation.systemPrompt, maxIterations = 200,
             strategy = jclawStrategy(
                 readTools = emptyList(), naive = true,
+                resolveRequest = { it.copy(organizerName = Scenario.ORGANIZER) },
                 draft = {
                     draftRequests += it
                     if (draftRequests.size == 1) original else alternative
@@ -101,6 +102,7 @@ class SendFollowUpTest : StringSpec({
                 "Codex rejected the plan after 2 refinements: Fixture rejection", alternative,
             )
             draftRequests[1].userInstruction shouldBe followUp
+            draftRequests[1].organizerName shouldBe Scenario.ORGANIZER
             draftRequests[1].recentlyUsedFlavors shouldBe Scenario.BURNED
             draftRequests[1].previouslyProposedFlavors shouldBe listOf(original.flavor)
             CliCritic.claudeDraftRequest(draftRequests[1]) shouldContain followUp
@@ -108,6 +110,7 @@ class SendFollowUpTest : StringSpec({
             refinements.forEach { it shouldContain followUp; it shouldContain "previouslyProposedFlavors=[ALREADY_PROFICIENT]" }
             judgeRequests.drop(1).take(3).forEach { review ->
                 review.request.userInstruction shouldBe followUp
+                review.request.organizerName shouldBe Scenario.ORGANIZER
                 review.request.previouslyProposedFlavors shouldBe listOf(original.flavor)
                 CliCritic.codexPrompt(review) shouldContain followUp
                 CliCritic.codexPrompt(review) shouldContain "previouslyProposedFlavors=[ALREADY_PROFICIENT]"

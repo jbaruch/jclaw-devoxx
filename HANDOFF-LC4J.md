@@ -19,8 +19,9 @@ documents, the same corporate-speak skill and these mock MCP jars:
 
 Launch `mocks/build/libs/calendar-mcp.jar` and `organizer-mcp.jar` over stdio.
 Route stderr to the visible tool trace. The calendar reports past declines without
-their reasons; memory supplies those reasons. The inherited calendar dates still
-need refreshing or explicit fixture labelling before rehearsal.
+their reasons; memory supplies those reasons. The calendar dates are refreshed to
+the fictional Tuesday October 6 fixture, separate from the real
+session schedule. Use those same jars on both implementations.
 
 ## Round boundaries
 
@@ -49,6 +50,8 @@ The serializers in domain/ are the authoritative data contract:
 - `DeclineCritique` decides approval and supplies feedback.
 - Two refinements maximum; a third rejection, invalid verdict or unavailable critic blocks.
 - Drafting cannot create events or send. Claimed supporting event IDs are invalid.
+- Resolve the organizer's canonical name from the selected calendar event before
+  drafting and reviewing; a model abbreviation must not become a different target.
 
 Only a reviewed candidate reaches the application approval gate. Holding sends
 nothing. A substantive human rejection starts a fresh reviewed attempt with the

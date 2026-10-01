@@ -86,14 +86,13 @@ fun main(): Unit = runBlocking {
                                 },
                                 send = {
                                     deliveryAttempted = true
-                                    val receipt = mcp.sendDecline(result)
-                                    println("sent: $receipt")
-                                    conversation.assistant("Delivered. Organizer receipt: $receipt")
-                                    try {
-                                        memory.add(listOf(Memory.story(result.request.eventId, result.request.organizerName, it.flavor.name, it.messageToOrganizer)))
-                                    } catch (error: Exception) {
-                                        println("Delivered, but could not save to memory: ${error.message}")
-                                    }
+                                    sendAndRemember(result, mcp, memory,
+                                        onDelivered = { receipt ->
+                                            println("sent: $receipt")
+                                            conversation.assistant("Delivered. Organizer receipt: $receipt")
+                                        },
+                                        onMemoryFailure = { println("Delivered, but could not save to memory: ${it.message}") },
+                                    )
                                 },
                             )
                             if (!sent) {

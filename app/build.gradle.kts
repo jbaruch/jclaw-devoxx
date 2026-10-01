@@ -91,7 +91,11 @@ listOf(
     tasks.named<Sync>("installDist") { into("bin") { from(t) { fileMode = 493 } } }
 }
 
-tasks.test { useJUnitPlatform() }
+tasks.test {
+    useJUnitPlatform()
+    dependsOn(":mocks:mcpJars")
+    systemProperty("jclaw.mocks", rootProject.layout.projectDirectory.dir("mocks/build/libs").asFile.absolutePath)
+}
 
 // JavaExec starts in app/; all entry points need the same absolute runtime skill root.
 tasks.withType<JavaExec>().configureEach {

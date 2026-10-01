@@ -5,6 +5,7 @@ import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import jclaw.domain.DeclineReceipt
 import jclaw.domain.DeclineSend
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.CancellationException
 import java.security.MessageDigest
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -46,4 +47,22 @@ internal fun confirmedReceipt(result: CallToolResult?, expected: DeclineSend): D
 internal fun deliveryFailure(error: Throwable): String = when (error) {
     is DeliveryRejected -> "Delivery failed: ${error.message}. No sent-history record was written."
     else -> "Delivery is unconfirmed: ${error.message}. Check the organizer before retrying; no sent-history record was written."
+}
+
+/** Shared application send path: durable history follows a validated receipt. */
+internal suspend fun sendAndRemember(
+    ready: JclawResult.ReadyToSend,
+    mcp: Mcp,
+    memory: Memory,
+    onDelivered: suspend (DeclineReceipt) -> Unit,
+    onMemoryFailure: (Exception) -> Unit,
+): DeclineReceipt {
+    val receipt = mcp.sendDecline(ready)
+    onDelivered(receipt)
+    try {
+        memory.add(listOf(Memory.story(ready.request.eventId, ready.request.organizerName,
+            ready.deployment.flavor.name, ready.deployment.messageToOrganizer)))
+    } catch (cancelled: CancellationException) { throw cancelled }
+    catch (error: Exception) { onMemoryFailure(error) }
+    return receipt
 }

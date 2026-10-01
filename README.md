@@ -6,7 +6,8 @@ a three-hour live showdown with Baruch Sadogursky and Viktor Gamov.
 j-claw is a personal assistant. Our shared demo task asks it to get Baruch out of
 Basic AI Proficiency Training on Tuesday, run by Dana from People Ops, while
 avoiding excuses already used with her. The calendar and organizer are mock MCP
-servers; delivery never contacts a real person.
+servers; delivery never contacts a real person. Their fictional training takes
+place on Tuesday October 6; this fixture is separate from the real session schedule.
 
 Built against **Koog 1.3.0**. This repository starts from the
 [IdeaConf demo](https://github.com/jbaruch/jclaw-demo), with a reviewed Devoxx baseline.
@@ -17,6 +18,9 @@ The multi-model workflow uses Gemini to identify the task, Claude's subscription
 CLI to draft and refine, and Codex's subscription CLI to review a typed candidate.
 Each review receives the current request, including changes from human feedback.
 Two refinements are allowed. A failed, invalid or exhausted review blocks sending.
+
+The application resolves the organizer's exact identity from the selected calendar
+event before drafting. An abbreviated model echo cannot change the recipient.
 
 - **Workflow mode (round 5)** ends with a reviewed proposal or a blocked result.
 - **Guardrails mode (round 6)** adds human confirmation, rejection and a fresh
@@ -38,6 +42,8 @@ Corporate-speak accepts intensity 1–11 and defaults to eleven.
 
 Prerequisites: JDK 21, Google API access, and `claude` and `codex` on PATH
 with subscription login already configured. The Gradle wrapper handles Gradle.
+Use JDK 21 for Gradle; on macOS the launcher selects the installed JDK 21, while
+other platforms should set JAVA_HOME to that JDK.
 
 ```bash
 cp .env.example .env
@@ -61,6 +67,7 @@ Bare `./jclaw` opens guardrails mode. Other tools:
 ```bash
 ./jclaw skills 4 'The release is delayed because tests are failing. I will send an update tomorrow.'
 ./jclaw graph
+./jclaw graph native       # native task/verification helper teaching graph; no API calls
 ./jclaw codex
 JCLAW_MOCK_DELIVERY=wrong-candidate ./jclaw guardrails plain
 ```
@@ -83,14 +90,17 @@ are created yet.
 | 2 | Tools / MCP | Dedicated checkpoint pending; mocks included |
 | 3 | Memory | Dedicated checkpoint pending; implementation included |
 | 4 | Skills | Dedicated checkpoint pending; runtime skill and runner included |
-| 5 | Multi-agent workflows | Reviewed baseline implemented; live rehearsal pending |
-| 6 | Guardrails / human loop | Receipt and approval gates implemented; live rehearsal pending |
-| 7 | Observability | Agent/CLI coverage implemented; live export rehearsal pending |
+| 5 | Multi-agent workflows | Native example and full CLI workflow verified; terminal rehearsal pending |
+| 6 | Guardrails / human loop | Live rejection, bounded blocking, approved delivery and skill follow-up verified |
+| 7 | Observability | Live agent/CLI traces and critic request metadata verified; projector walkthrough pending |
 
 The closing Port implementation is planned separately from the competitive
-rounds and is not implemented here yet. Native task/verification helper teaching
-examples and live verification remain build work. Step branches follow the
-completed application.
+rounds and is not implemented here yet. The native task/verification teaching
+example is compiled in app/src/main/kotlin/jclaw/NativeWorkflow.kt and starts
+after request identification. It accepts per-role API models and an appropriate
+executor; it is separate from the full app's subscription transport. Its loop is
+bounded per run and returns an approved or blocked result. Step branches follow
+the completed application.
 
 See [RUNBOOK.md](RUNBOOK.md) for rehearsal, [HANDOFF-LC4J.md](HANDOFF-LC4J.md)
 for the shared comparison contract, and [BUILD-NOTES.md](BUILD-NOTES.md) for the

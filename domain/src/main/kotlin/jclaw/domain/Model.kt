@@ -55,7 +55,7 @@ public data class DeclineRequest(
     val recentlyUsedFlavors: List<ExcuseFlavor>,
     @property:LLMDescription("People who would notice if the story does not hold up")
     val knownAttendees: List<String>,
-    @property:LLMDescription("Who runs the session - they receive the decline")
+    @property:LLMDescription("Exact organizer name from the selected calendar event; they receive the decline. Do not abbreviate it.")
     val organizerName: String,
     @property:LLMDescription("The user's current instruction, including requested changes to a previous plan")
     val userInstruction: String = "",

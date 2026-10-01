@@ -1,6 +1,7 @@
 plugins { application }
 
 dependencies {
+    implementation(project(":domain"))
     implementation(libs.mcp.server)
     implementation(libs.kotlinx.coroutines)
     implementation(libs.kotlinx.serialization.json)

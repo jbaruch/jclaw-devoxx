@@ -12,6 +12,7 @@ import io.opentelemetry.kotlin.tracing.data.SpanData
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
+import jclaw.domain.DeclineReview
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import io.opentelemetry.kotlin.tracing.export.batchSpanProcessor
@@ -40,8 +41,8 @@ import kotlin.time.Duration.Companion.seconds
 object Observability {
     val enabled: Boolean = System.getenv("LANGFUSE_PUBLIC_KEY") != null
 
-    private const val RELEASE = "ideaconf-2026"
-    private const val KOOG = "1.2.0"
+    private const val RELEASE = "devoxx-be-2026"
+    private const val KOOG = "1.3.0"
 
     /** One process, one session: the turns of one conversation, grouped. */
     private val session: String =
@@ -161,7 +162,9 @@ internal fun withLangfuseNodeDetails(span: SpanData): SpanData {
                 runCatching { Json.decodeFromString<ReviewAttempt>(it) }.getOrNull()
             }
             attempt?.let {
-                put("langfuse.observation.metadata.application_prompt", CliCritic.codexPrompt(it.plan))
+                it.request?.let { request ->
+                    put("langfuse.observation.metadata.application_prompt", CliCritic.codexPrompt(DeclineReview(request, it.plan)))
+                }
                 put("langfuse.observation.metadata.review_attempt", it.refinements + 1)
             }
         }

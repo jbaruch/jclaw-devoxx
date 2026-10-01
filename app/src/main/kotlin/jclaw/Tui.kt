@@ -17,21 +17,21 @@ import com.jbaruch.jclaw.tui.JclawTui
 import com.jbaruch.jclaw.tui.StageState
 import com.jbaruch.jclaw.tui.TraceKind
 import com.jbaruch.jclaw.tui.TraceStageState
-import jclaw.domain.Scenario
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlin.io.path.Path
 import kotlin.system.exitProcess
 
 /**
- * Round 4 with the three-pane terminal UI instead of scrolling stdout.
+ * Devoxx workflow and guardrails with the three-pane terminal UI.
  *
  * Same pipeline and JCLAW_NAIVE switch. The difference is
  * that the subtask boundaries and tool calls land in a TRACE pane where they
@@ -45,6 +45,7 @@ fun main(args: Array<String>) {
     JclawTui.quietStdStreams(Path("jclaw-tui.log"))
     val apiKey = requireNotNull(System.getenv("GOOGLE_API_KEY")) { "GOOGLE_API_KEY is not set" }
     val naive = System.getenv("JCLAW_NAIVE") == "1"
+    val reviewOnly = System.getenv("JCLAW_REVIEW_ONLY") == "1"
 
     val submissions = Channel<String>(Channel.UNLIMITED)
     val tui = JclawTui(
@@ -59,6 +60,8 @@ fun main(args: Array<String>) {
     val agentScope = CoroutineScope(SupervisorJob() + Dispatchers.IO + CoroutineName("jclaw-agent"))
     agentScope.launch {
         val mcp = Mcp.boot("calendar-mcp", "organizer-mcp", onStderr = { tui.trace(it, TraceKind.TOOL_CALL) })
+        // Also clean up if skills, embeddings or agent construction fail during startup.
+        closeAgent = { mcp.close() }
         val skills = AgentSkills.discover(trace = { tui.trace(it, TraceKind.TOOL_CALL) })
         val memory = Memory.open(
             LLMEmbedder(GoogleLLMClient(apiKey), GoogleModels.Embeddings.GeminiEmbedding001),
@@ -100,7 +103,7 @@ fun main(args: Array<String>) {
             // Real traces, when there is somewhere to send them: see Observability.
             if (Observability.enabled) install(OpenTelemetry) {
                 langfuse(
-                    round = 4,
+                    round = System.getenv("JCLAW_ROUND")?.toIntOrNull() ?: if (reviewOnly) 5 else 6,
                     if (naive) "naive" else "domain-modelled",
                     "critic:codex", "drafter:claude-code",
                     metadata = mapOf("model" to Models.flash.id, "drafter" to "claude-code", "critic" to "codex"),
@@ -170,6 +173,11 @@ fun main(args: Array<String>) {
                 tui.chat("j-claw: ✓ Codex approved — flavor ${plan.flavor}", ChatKind.OK)
                 tui.chat("j-claw: ${plan.messageToOrganizer}", ChatKind.JCLAW)
                 tui.chat("j-claw: hallway script → ${plan.hallwayScript}", ChatKind.JCLAW)
+                tui.chat("recipient: ${ready.request.organizerName}; event: ${ready.request.eventId}", ChatKind.OK)
+                if (reviewOnly) {
+                    tui.chat("REVIEWED PROPOSAL. Human confirmation and sending are disabled in this round.", ChatKind.OK)
+                    continue
+                }
                 val delivered = deliverApproved(ready,
                     confirm = {
                         tui.chat("Send it? type 'send' to deliver, 'hold' to stop, or tell me what to change.", ChatKind.OK)
@@ -178,12 +186,11 @@ fun main(args: Array<String>) {
                     },
                     send = {
                         deliveryAttempted = true
-                        val receipt = mcp.call("organizer-mcp", "sendDecline",
-                            mapOf("eventId" to Scenario.EVENT_ID, "message" to it.messageToOrganizer))
+                        val receipt = mcp.sendDecline(ready)
                         tui.chat("j-claw: delivered. $receipt", ChatKind.OK)
                         conversation.assistant("Delivered. Organizer receipt: $receipt")
                         try {
-                            memory.add(listOf(Memory.story(Scenario.EVENT_TITLE, Scenario.ORGANIZER, it.flavor.name, it.messageToOrganizer)))
+                            memory.add(listOf(Memory.story(ready.request.eventId, ready.request.organizerName, it.flavor.name, it.messageToOrganizer)))
                         } catch (error: Exception) {
                             tui.chat("Delivered, but could not save to memory: ${error.message}", ChatKind.ERR)
                         }
@@ -199,7 +206,7 @@ fun main(args: Array<String>) {
             } catch (t: Throwable) {
                 tui.finishTraceStages(TraceStageState.FAILED)
                 tui.chat(
-                    if (deliveryAttempted) "Delivery attempt failed: ${t.message}. Check the organizer receipt before retrying."
+                    if (deliveryAttempted) deliveryFailure(t)
                     else "BLOCKED: ${t.message ?: t.javaClass.simpleName}. Nothing was sent.",
                     ChatKind.ERR,
                 )
@@ -216,7 +223,7 @@ fun main(args: Array<String>) {
         t.printStackTrace()
         exitProcess(1)
     } finally {
-        agentScope.cancel()
+        runBlocking { agentScope.coroutineContext[Job]?.cancelAndJoin() }
         // Closing ends the spans Koog still holds; the flush ships them (see Observability).
         closeAgent?.let { runBlocking { it() } }
         // Same reason as the CLI front end: the MCP reader thread will not let the

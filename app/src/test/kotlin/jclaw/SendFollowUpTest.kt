@@ -22,6 +22,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.encodeToJsonElement
 
 class SendFollowUpTest : StringSpec({
+    val baseRequest = DeclineRequest(Scenario.EVENT_ID, Scenario.BURNED, Scenario.ATTENDEES, Scenario.ORGANIZER)
     "only exact affirmative replies authorize sending" {
         listOf("send", "SEND", " y ", "yes").forEach { sendReply(it) shouldBe SendReply.Send }
         listOf("", "n", "no", "Hold", "no thanks.", "don't send", "cancel").forEach {
@@ -38,7 +39,7 @@ class SendFollowUpTest : StringSpec({
             val conversation = Conversation("Assistant")
             val queued = mutableListOf<String>()
             deliverApproved(
-                JclawResult.ReadyToSend(plan),
+                JclawResult.ReadyToSend(plan, baseRequest),
                 confirm = { conversation.confirmSend(answer) { queued += it } },
                 send = { error("A hold or follow-up must not send") },
             ) shouldBe false
@@ -57,6 +58,7 @@ class SendFollowUpTest : StringSpec({
         val draftRequests = mutableListOf<DeclineRequest>()
         val refinements = mutableListOf<String>()
         val events = mutableListOf<ReviewEvent>()
+        val judgeRequests = mutableListOf<jclaw.domain.DeclineReview>()
         val conversation = Conversation("Generic assistant")
         val results: List<JsonElement> = listOf(
             Json.encodeToJsonElement(ClassifiedInput(Intent.EXCUSE_REQUEST, "Plan a decline")), Json.encodeToJsonElement(request),
@@ -80,16 +82,17 @@ class SendFollowUpTest : StringSpec({
                     if (draftRequests.size == 1) original else alternative
                 },
                 refinePlan = { refinements += it; alternative },
-                judgePlan = { plan ->
-                    DeclineCritique(PlausibilityTier.CREDIBLE, plan == original,
-                        if (plan == original) "Fixture approval" else "Fixture rejection")
+                judgePlan = { review ->
+                    judgeRequests += review
+                    DeclineCritique(PlausibilityTier.CREDIBLE, review.plan == original,
+                        if (review.plan == original) "Fixture approval" else "Fixture rejection")
                 },
                 onReview = { events += it },
             ),
         ) { install(ChatMemory) { conversation.configure(this) } }
         try {
             val ready = conversation.run(agent, "Plan a decline")
-            ready shouldBe JclawResult.ReadyToSend(original)
+            ready shouldBe JclawResult.ReadyToSend(original, request.copy(userInstruction = "Plan a decline"))
             var queued: String? = null
             deliverApproved(ready, confirm = { conversation.confirmSend(followUp) { queued = it } },
                 send = { error("The previous approved draft must be held") }) shouldBe false
@@ -103,6 +106,12 @@ class SendFollowUpTest : StringSpec({
             CliCritic.claudeDraftRequest(draftRequests[1]) shouldContain followUp
             refinements.size shouldBe 2
             refinements.forEach { it shouldContain followUp; it shouldContain "previouslyProposedFlavors=[ALREADY_PROFICIENT]" }
+            judgeRequests.drop(1).take(3).forEach { review ->
+                review.request.userInstruction shouldBe followUp
+                review.request.previouslyProposedFlavors shouldBe listOf(original.flavor)
+                CliCritic.codexPrompt(review) shouldContain followUp
+                CliCritic.codexPrompt(review) shouldContain "previouslyProposedFlavors=[ALREADY_PROFICIENT]"
+            }
             val classifierHistory = prompts[2].messages
             classifierHistory.filterIsInstance<Message.User>().count { it.textContent() == followUp } shouldBe 1
             classifierHistory.joinToString { it.textContent() } shouldContain original.messageToOrganizer

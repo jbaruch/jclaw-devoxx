@@ -2,6 +2,7 @@ package jclaw
 
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import jclaw.domain.DeclineDeployment
+import jclaw.domain.DeclineRequest
 import kotlinx.serialization.Serializable
 
 /** What the user asked for. Not every message is a job. */
@@ -21,7 +22,7 @@ public enum class Intent { EXCUSE_REQUEST, CHAT }
 @Serializable
 public sealed interface JclawResult {
     @Serializable
-    public data class ReadyToSend(val deployment: DeclineDeployment) : JclawResult
+    public data class ReadyToSend(val deployment: DeclineDeployment, val request: DeclineRequest) : JclawResult
     @Serializable
     public data class Blocked(val reason: String, val deployment: DeclineDeployment? = null) : JclawResult
     @Serializable

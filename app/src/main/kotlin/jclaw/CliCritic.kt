@@ -7,6 +7,7 @@ import ai.koog.agents.cli.transport.ProcessCliTransport
 import jclaw.domain.DeclineCritique
 import jclaw.domain.DeclineDeployment
 import jclaw.domain.DeclineRequest
+import jclaw.domain.DeclineReview
 import jclaw.domain.Scenario
 import kotlinx.serialization.serializer
 import java.nio.file.Files
@@ -45,7 +46,7 @@ object CliCritic {
         fakeCalendarEventId to null. Do not claim you took any external action.
 
         CONTEXT: ${Scenario.USER_CONTEXT}
-        OBLIGATION: ${Scenario.EVENT_TITLE}
+        OBLIGATION: ${request.eventId}
         REQUEST: $request
         """.trimIndent()
 
@@ -69,7 +70,6 @@ object CliCritic {
                 fakeCalendarEventId to null. Do not claim you took any external action.
 
                 CONTEXT: ${Scenario.USER_CONTEXT}
-                OBLIGATION: ${Scenario.EVENT_TITLE}
                 PREVIOUS PLAN AND FEEDBACK:
                 $feedback
                 """.trimIndent()
@@ -79,7 +79,7 @@ object CliCritic {
     internal const val CODEX_SYSTEM_PROMPT = "You are an independent reviewer of a proposed plan. " +
         "Assess its quality and return the requested structured result."
 
-    internal fun codexRequest(deployment: DeclineDeployment): String =
+    internal fun codexRequest(review: DeclineReview): String =
         """
         Baruch wants to get out of this obligation. Is this the best available
         excuse and plan for his situation? Assess the message and hallway script.
@@ -87,21 +87,25 @@ object CliCritic {
         otherwise explain what should improve. Select the appropriate tier.
         Judge the supplied plan and context; you have no tools or external actions.
 
-        OBLIGATION: ${Scenario.EVENT_TITLE}
-        ORGANIZER: ${Scenario.ORGANIZER}
-        ATTENDEES: ${Scenario.ATTENDEES.joinToString()}
-        RECENTLY USED FLAVORS: ${Scenario.BURNED.joinToString()}
+        OBLIGATION: ${review.request.eventId}
         CONTEXT: ${Scenario.USER_CONTEXT}
 
+        CURRENT REQUEST (including the user's latest constraints):
+        ${review.request}
+
+        Do not reuse recentlyUsedFlavors or previouslyProposedFlavors. Check the
+        candidate against userInstruction; an approval of an earlier candidate
+        does not approve this one.
+
         PROPOSED PLAN:
-        $deployment
+        ${review.plan}
         """.trimIndent()
 
     /** The app-supplied prompt, before Codex adds its own CLI instructions. */
-    internal fun codexPrompt(deployment: DeclineDeployment): String =
-        "$CODEX_SYSTEM_PROMPT\n\n${codexRequest(deployment)}"
+    internal fun codexPrompt(review: DeclineReview): String =
+        "$CODEX_SYSTEM_PROMPT\n\n${codexRequest(review)}"
 
-    fun codex(): CliAIAgent<DeclineDeployment, DeclineCritique> =
+    fun codex(): CliAIAgent<DeclineReview, DeclineCritique> =
         TypedCodex.agent(
             serializer = serializer<DeclineCritique>(),
             systemPrompt = CODEX_SYSTEM_PROMPT,

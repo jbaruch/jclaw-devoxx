@@ -7,8 +7,11 @@ import jclaw.domain.DeclineCritique
 import jclaw.domain.DeclineDeployment
 import jclaw.domain.ExcuseFlavor
 import jclaw.domain.PlausibilityTier
+import jclaw.domain.DeclineRequest
+import jclaw.domain.Scenario
 
 class ReviewGateTest : StringSpec({
+    val request = DeclineRequest(Scenario.EVENT_ID, Scenario.BURNED, Scenario.ATTENDEES, Scenario.ORGANIZER)
     val original = DeclineDeployment(
         flavor = ExcuseFlavor.DEADLINE,
         messageToOrganizer = "I have a delivery deadline that afternoon.",
@@ -95,7 +98,7 @@ class ReviewGateTest : StringSpec({
     "a human refusal holds even a critic-approved plan" {
         val confirmations = mutableListOf<DeclineDeployment>()
         deliverApproved(
-            JclawResult.ReadyToSend(revised),
+            JclawResult.ReadyToSend(revised, request),
             confirm = { confirmations.add(it); false },
             send = { error("A human refusal must never send") },
         ) shouldBe false
@@ -108,7 +111,7 @@ class ReviewGateTest : StringSpec({
         val actions = mutableListOf<Pair<String, DeclineDeployment>>()
 
         deliverApproved(
-            JclawResult.ReadyToSend(review.attempt.plan),
+            JclawResult.ReadyToSend(review.attempt.plan, request),
             confirm = { actions.add("confirm" to it); true },
             send = { actions.add("send" to it) },
         ) shouldBe true

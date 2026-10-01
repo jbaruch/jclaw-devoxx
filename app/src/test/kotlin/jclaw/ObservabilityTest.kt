@@ -18,6 +18,7 @@ import io.opentelemetry.kotlin.tracing.export.batchSpanProcessor
 import jclaw.domain.DeclineCritique
 import jclaw.domain.DeclineDeployment
 import jclaw.domain.DeclineRequest
+import jclaw.domain.DeclineReview
 import jclaw.domain.ExcuseFlavor
 import jclaw.domain.PlausibilityTier
 import jclaw.domain.Scenario
@@ -45,12 +46,12 @@ class ObservabilityTest : StringSpec({
         val approval = DeclineCritique(PlausibilityTier.AIRTIGHT, true, "Fixture: revision approved")
         // Scripted graph: exercises Koog serialization/export and retry spans, with no model calls.
         val pipeline = strategy<DeclineRequest, JclawResult>("telemetry-fixture") {
-            val deploy by node<DeclineRequest, ReviewAttempt> { ReviewAttempt(draft) }
+            val deploy by node<DeclineRequest, ReviewAttempt> { ReviewAttempt(draft, request = it) }
             val verify by node<ReviewAttempt, ReviewDecision> {
                 reviewDecision(it, if (it.refinements == 0) rejection else approval)
             }
-            val refine by node<ReviewDecision, ReviewAttempt> { ReviewAttempt(revision, it.attempt.refinements + 1) }
-            val readyToSend by node<ReviewDecision, JclawResult> { JclawResult.ReadyToSend(it.attempt.plan) }
+            val refine by node<ReviewDecision, ReviewAttempt> { ReviewAttempt(revision, it.attempt.refinements + 1, it.attempt.request) }
+            val readyToSend by node<ReviewDecision, JclawResult> { JclawResult.ReadyToSend(it.attempt.plan, requireNotNull(it.attempt.request)) }
             edge(nodeStart forwardTo deploy)
             edge(deploy forwardTo verify)
             edge(verify forwardTo refine onCondition { it.route == ReviewRoute.REFINE })
@@ -71,7 +72,7 @@ class ObservabilityTest : StringSpec({
         }
         val request = DeclineRequest(Scenario.EVENT_ID, Scenario.BURNED, Scenario.ATTENDEES, Scenario.ORGANIZER)
         try {
-            agent.run(request) shouldBe JclawResult.ReadyToSend(revision)
+            agent.run(request) shouldBe JclawResult.ReadyToSend(revision, request)
         } finally {
             agent.close()
             processor?.forceFlush()
@@ -87,7 +88,7 @@ class ObservabilityTest : StringSpec({
             output.route shouldBe if (index == 0) ReviewRoute.REFINE else ReviewRoute.APPROVE
             span.attributes["langfuse.observation.metadata.provider"] shouldBe "openai"
             span.attributes["langfuse.observation.metadata.authentication"] shouldBe "subscription"
-            span.attributes["langfuse.observation.metadata.application_prompt"] shouldBe CliCritic.codexPrompt(input.plan)
+            span.attributes["langfuse.observation.metadata.application_prompt"] shouldBe CliCritic.codexPrompt(DeclineReview(request, input.plan))
             (span.attributes["langfuse.observation.metadata.application_prompt"] as String) shouldContain
                 "Is this the best available\nexcuse and plan for his situation?"
             span.attributes.containsKey("gen_ai.usage.input_tokens") shouldBe false
@@ -100,7 +101,7 @@ class ObservabilityTest : StringSpec({
         }
         val finalNode = enrichedSpans.single { it.attributes["koog.node.id"] == "readyToSend" }
         Json.decodeFromString<JclawResult>(finalNode.attributes.getValue("langfuse.observation.output") as String) shouldBe
-            JclawResult.ReadyToSend(revision)
+            JclawResult.ReadyToSend(revision, request)
         enrichedSpans.forEach { enriched ->
             val original = rawSpans.single { it.spanContext.spanId == enriched.spanContext.spanId }
             enriched.parent shouldBe original.parent

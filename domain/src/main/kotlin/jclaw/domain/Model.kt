@@ -93,3 +93,13 @@ public data class DeclineCritique(
     @property:LLMDescription("What to fix, when not approved")
     val feedback: String,
 )
+
+/** Every review sees the current request, including constraints added by a human retry. */
+@Serializable
+@LLMDescription("A candidate together with the current request it must satisfy")
+public data class DeclineReview(
+    @property:LLMDescription("Current request, past sent flavors and previously proposed alternatives")
+    val request: DeclineRequest,
+    @property:LLMDescription("Exact proposed message and supporting plan to judge")
+    val plan: DeclineDeployment,
+)

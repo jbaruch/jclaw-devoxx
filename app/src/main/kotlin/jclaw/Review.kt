@@ -2,11 +2,16 @@ package jclaw
 
 import jclaw.domain.DeclineCritique
 import jclaw.domain.DeclineDeployment
+import jclaw.domain.DeclineRequest
 import kotlinx.serialization.Serializable
 
 /** Attempt count travels with this request, never in mutable strategy-wide state. */
 @Serializable
-data class ReviewAttempt(val plan: DeclineDeployment, val refinements: Int = 0)
+data class ReviewAttempt(
+    val plan: DeclineDeployment,
+    val refinements: Int = 0,
+    val request: DeclineRequest? = null,
+)
 
 @Serializable
 enum class ReviewRoute { APPROVE, REFINE, BLOCK }

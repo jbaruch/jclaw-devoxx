@@ -11,6 +11,7 @@ import ai.koog.agents.ext.agent.subgraphWithTask
 import jclaw.domain.DeclineCritique
 import jclaw.domain.DeclineDeployment
 import jclaw.domain.DeclineRequest
+import jclaw.domain.DeclineReview
 import jclaw.domain.Scenario
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
@@ -47,7 +48,7 @@ internal fun jclawStrategy(
     skills: AgentSkills = AgentSkills.EMPTY,
     draft: suspend (DeclineRequest) -> DeclineDeployment,
     refinePlan: suspend (String) -> DeclineDeployment,
-    judgePlan: suspend (DeclineDeployment) -> DeclineCritique,
+    judgePlan: suspend (DeclineReview) -> DeclineCritique,
     onStage: (String, String, PipelineStageState) -> Unit = { _, _, _ -> },
     onReview: (ReviewEvent) -> Unit = {},
 ): AIAgentGraphStrategy<String, JclawResult> {
@@ -99,7 +100,7 @@ internal fun jclawStrategy(
             val request = identified.copy(userInstruction = storage.getValue(turnInput))
             storage.set(draftRequest, request)
             val plan = cliStage("deploy", "Claude (subscription)") { draft(request) }
-            ReviewAttempt(plan)
+            ReviewAttempt(plan, request = request)
         }
         val verify by node<ReviewAttempt, ReviewDecision> { attempt ->
             try {
@@ -108,7 +109,9 @@ internal fun jclawStrategy(
                         onReview(event)
                         storage.set(turnReviewMessages, storage.get(turnReviewMessages).orEmpty() + event.chatText())
                     },
-                    judge = { plan -> cliStage("verify", "Codex (subscription)") { judgePlan(plan) } },
+                    judge = { plan -> cliStage("verify", "Codex (subscription)") {
+                        judgePlan(DeclineReview(storage.getValue(draftRequest), plan))
+                    } },
                 )
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -121,10 +124,10 @@ internal fun jclawStrategy(
                 refinePlan("REQUEST: ${storage.getValue(draftRequest)}\n" +
                     "Previous plan: ${decision.attempt.plan}\nJudge feedback: ${decision.feedback}")
             }
-            ReviewAttempt(plan, decision.attempt.refinements + 1)
+            ReviewAttempt(plan, decision.attempt.refinements + 1, storage.getValue(draftRequest))
         }
         val readyToSend by node<ReviewDecision, JclawResult> { decision ->
-            JclawResult.ReadyToSend(decision.attempt.plan)
+            JclawResult.ReadyToSend(decision.attempt.plan, storage.getValue(draftRequest))
         }
         val blocked by node<ReviewDecision, JclawResult> { decision ->
             JclawResult.Blocked(decision.feedback, decision.attempt.plan)

@@ -12,7 +12,6 @@ import ai.koog.prompt.executor.clients.google.GoogleLLMClient
 import ai.koog.prompt.executor.clients.google.GoogleModels
 import ai.koog.prompt.executor.llms.all.simpleGoogleAIExecutor
 import jclaw.Observability.langfuse
-import jclaw.domain.Scenario
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import kotlin.system.exitProcess
@@ -22,6 +21,7 @@ fun main(): Unit = runBlocking {
     val apiKey = requireNotNull(System.getenv("GOOGLE_API_KEY")) { "GOOGLE_API_KEY is not set" }
     val naive = System.getenv("JCLAW_NAIVE") == "1"
     val autoSend = System.getenv("JCLAW_AUTOSEND") == "1"
+    val reviewOnly = System.getenv("JCLAW_REVIEW_ONLY") == "1"
     Mcp.boot("calendar-mcp", "organizer-mcp").use { mcp ->
         val skills = AgentSkills.discover()
         val memory = Memory.open(LLMEmbedder(GoogleLLMClient(apiKey), GoogleModels.Embeddings.GeminiEmbedding001))
@@ -44,7 +44,8 @@ fun main(): Unit = runBlocking {
             install(ChatMemory) { conversation.configure(this) }
             if (Observability.enabled) install(OpenTelemetry) {
                 langfuse(
-                    4, if (naive) "naive" else "domain-modelled", "critic:codex", "drafter:claude-code",
+                    System.getenv("JCLAW_ROUND")?.toIntOrNull() ?: if (reviewOnly) 5 else 6,
+                    if (naive) "naive" else "domain-modelled", "critic:codex", "drafter:claude-code",
                     metadata = mapOf("model" to Models.flash.id, "drafter" to "claude-code", "critic" to "codex"),
                 )
             }
@@ -71,6 +72,11 @@ fun main(): Unit = runBlocking {
                             val plan = result.deployment
                             println("=== CODEX APPROVED THIS PLAN ===")
                             println("flavor: ${plan.flavor}\nmessage: ${plan.messageToOrganizer}\nhallway: ${plan.hallwayScript}")
+                            println("recipient: ${result.request.organizerName}; event: ${result.request.eventId}")
+                            if (reviewOnly) {
+                                println("REVIEWED PROPOSAL. Human confirmation and sending are disabled in this round.")
+                                continue
+                            }
                             val sent = deliverApproved(result,
                                 confirm = {
                                     print("Send it? [send/y/N, or tell me what to change] ")
@@ -80,12 +86,11 @@ fun main(): Unit = runBlocking {
                                 },
                                 send = {
                                     deliveryAttempted = true
-                                    val receipt = mcp.call("organizer-mcp", "sendDecline",
-                                        mapOf("eventId" to Scenario.EVENT_ID, "message" to it.messageToOrganizer))
+                                    val receipt = mcp.sendDecline(result)
                                     println("sent: $receipt")
                                     conversation.assistant("Delivered. Organizer receipt: $receipt")
                                     try {
-                                        memory.add(listOf(Memory.story(Scenario.EVENT_TITLE, Scenario.ORGANIZER, it.flavor.name, it.messageToOrganizer)))
+                                        memory.add(listOf(Memory.story(result.request.eventId, result.request.organizerName, it.flavor.name, it.messageToOrganizer)))
                                     } catch (error: Exception) {
                                         println("Delivered, but could not save to memory: ${error.message}")
                                     }
@@ -99,7 +104,7 @@ fun main(): Unit = runBlocking {
                     }
                 } catch (cancelled: CancellationException) { throw cancelled }
                 catch (error: Exception) {
-                    if (deliveryAttempted) println("Delivery attempt failed: ${error.message}. Check the organizer receipt before retrying.")
+                    if (deliveryAttempted) println(deliveryFailure(error))
                     else println("BLOCKED: ${error.message}\nNothing was sent.")
                 }
                 println()

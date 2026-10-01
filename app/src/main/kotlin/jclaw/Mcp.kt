@@ -6,6 +6,8 @@ import ai.koog.agents.mcp.McpToolRegistryProvider
 import ai.koog.agents.mcp.defaultStdioTransport
 import io.modelcontextprotocol.kotlin.sdk.client.Client
 import io.modelcontextprotocol.kotlin.sdk.types.Implementation
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import jclaw.domain.DeclineReceipt
 import java.io.File
 
 /**
@@ -21,10 +23,18 @@ class Mcp private constructor(
     private val procs: List<Process>,
 ) : AutoCloseable {
 
-    suspend fun call(server: String, tool: String, args: Map<String, Any?>): String {
+    suspend fun call(server: String, tool: String, args: Map<String, Any?>): CallToolResult? {
         val client = requireNotNull(clients[server]) { "no such MCP server: $server" }
-        val result = client.callTool(tool, args)
-        return result?.toString() ?: "(no result)"
+        return client.callTool(tool, args)
+    }
+
+    suspend fun sendDecline(ready: JclawResult.ReadyToSend): DeclineReceipt {
+        val expected = sendEnvelope(ready)
+        val args = mapOf(
+            "eventId" to expected.eventId, "organizerName" to expected.organizerName,
+            "message" to expected.message, "callId" to expected.callId, "candidateId" to expected.candidateId,
+        )
+        return confirmedReceipt(call("organizer-mcp", "sendDecline", args), expected)
     }
 
     /**
@@ -56,7 +66,7 @@ class Mcp private constructor(
             val clients = mutableMapOf<String, Client>()
             var registry = ToolRegistry.EMPTY
 
-            for (name in servers) {
+            try { for (name in servers) {
                 val jar = File(mocksDir, "$name.jar")
                 require(jar.exists()) { "missing ${jar.absolutePath} - run: gradle :mocks:mcpJars" }
 
@@ -85,6 +95,10 @@ class Mcp private constructor(
                     mcpClient = client,
                     serverInfo = McpServerInfo(command = name),
                 )
+            } } catch (error: Throwable) {
+                procs.forEach { it.destroyForcibly() }
+                procs.forEach { runCatching { it.waitFor(2, java.util.concurrent.TimeUnit.SECONDS) } }
+                throw error
             }
             return Mcp(registry, clients, procs)
         }

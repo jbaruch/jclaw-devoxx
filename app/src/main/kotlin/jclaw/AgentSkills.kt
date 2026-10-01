@@ -3,7 +3,6 @@ package jclaw
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.ext.tool.file.ListDirectoryTool
 import ai.koog.agents.ext.tool.file.ReadFileTool
-import ai.koog.rag.base.files.JVMFileSystemProvider
 import ai.koog.skills.discovery.discoverSkills
 import ai.koog.skills.prompt.SkillsPromptFormat
 import ai.koog.skills.prompt.generateSkillsPrompt
@@ -19,8 +18,9 @@ class AgentSkills private constructor(val prompt: String, val registry: ToolRegi
             trace: (String) -> Unit = ::println,
         ): AgentSkills {
             val absoluteRoot = root.canonicalFile.absolutePath
+            val files = SkillFiles(root.toPath())
             val discovered = discoverSkills(
-                JVMFileSystemProvider.ReadOnly, listOf(absoluteRoot),
+                files, listOf(absoluteRoot),
                 warningLogger = { trace("skills: $it") },
             )
             trace("skills: " + discovered.joinToString { it.name }.ifEmpty { "none discovered in $absoluteRoot" })
@@ -35,8 +35,8 @@ class AgentSkills private constructor(val prompt: String, val registry: ToolRegi
                 ${generateSkillsPrompt(discovered, SkillsPromptFormat.XML)}
                 """.trimIndent(),
                 ToolRegistry {
-                    tool(ListDirectoryTool(JVMFileSystemProvider.ReadOnly))
-                    tool(ReadFileTool(JVMFileSystemProvider.ReadOnly))
+                    tool(ListDirectoryTool(files))
+                    tool(ReadFileTool(files))
                 },
             )
         }

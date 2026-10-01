@@ -39,6 +39,28 @@ class AgentSkillsTest : StringSpec({
         } shouldBe SkillRewriteRequest(4, "Cache fixed.")
     }
 
+    "native skill tools reject absolute traversal and symlink escapes outside their root" {
+        val directory = Files.createTempDirectory("jclaw-skill-scope-")
+        try {
+            val root = directory.resolve("skills").toFile().apply { mkdirs() }
+            val skill = root.resolve("note/SKILL.md").apply {
+                parentFile.mkdirs()
+                writeText("---\nname: note\ndescription: Write a note.\n---\nUse this procedure.\n")
+            }
+            val outside = directory.resolve("outside.txt").toFile().apply { writeText("SYNTHETIC-OUTSIDE") }
+            val link = root.resolve("escape.txt").toPath()
+            Files.createSymbolicLink(link, outside.toPath())
+            val runtime = AgentSkills.discover(root) {}
+            val read = runtime.registry.tools.filterIsInstance<ReadFileTool<*>>().single()
+            listOf(outside.absolutePath, root.resolve("../outside.txt").absolutePath, link.toString()).forEach {
+                shouldThrow<IllegalArgumentException> { read.execute(ReadFileTool.Args(it)) }
+            }
+            read.execute(ReadFileTool.Args(skill.absolutePath)).toString() shouldContain "Use this procedure"
+            val list = runtime.registry.tools.filterIsInstance<ListDirectoryTool<*>>().single()
+            shouldThrow<IllegalArgumentException> { list.execute(ListDirectoryTool.Args(directory.toString())) }
+        } finally { directory.toFile().deleteRecursively() }
+    }
+
     "standalone accepts environment intensity and message" {
         skillRewriteRequest(emptyArray(), mapOf("JCLAW_LEVEL" to "7", "JCLAW_MESSAGE" to "The release is delayed.")) {
             error("stdin should not be read")

@@ -30,6 +30,8 @@ __pycache__/
 # Local env files
 .env
 .env.local
+.env.*
+!.env.example
 
 # Logs
 *.log
@@ -40,6 +42,11 @@ logs/
 
 # j-claw's memory: memory/documents/ is committed (the seed); the vectors are an embedding cache
 memory/vectors/
+# Keep only the three fictional seed stories in Git; rehearsal sends stay local.
+memory/documents/*
+!memory/documents/2e3eea73-6e25-5ab8-8159-d986db9e0f38
+!memory/documents/2e72c8ef-dd58-524c-adb5-4e0c39e9a865
+!memory/documents/87ac1ec3-7e7f-56bd-a18f-3e731e57a676
 
 # Compiled output that isn't committed
 **/target/

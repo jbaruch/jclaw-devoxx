@@ -1,65 +1,60 @@
 #!/usr/bin/env bash
-# Stage launcher.
-#
-#   ./jclaw 1        round 1 - switches branch silently, copies the round's opening
-#                    sentence to the clipboard, opens the three-pane TUI. Paste it into
-#                    PROMPT. In round 1, then ask it to send the email: no tools.
-#   ./jclaw 2|3|4    same for the other rounds
-#   ./jclaw          re-run whatever round is checked out, in the TUI
-#   ./jclaw plain    the same round on stdout, no TUI - paste the sentence there too.
-#                    The fallback if the TUI misbehaves.
-#   ./jclaw tui      alias of the default
-#   ./jclaw skills N 'text' corporate-speak at intensity N (round3 and round4)
-#   ./jclaw graph    emit pipeline.mmd from the strategy   (round4 only)
-#   ./jclaw codex    typed output from Codex               (round4 only)
-#
-# Switching is silent on purpose: "Already on 'round1'" on a projector announces
-# that the whole thing was staged. Nothing about the mechanics should be on screen.
-#
-# The round's opening line is copied to the clipboard, so paste it - do not type it
-# live and do not misremember it. It is the same sentence in rounds 2-4 by design.
+# Devoxx launcher: explicit modes; no branch switching or memory resets.
 set -euo pipefail
 cd "$(dirname "$0")"
 
-# Keys live in .env (gitignored). Never typed, never on screen.
+usage() {
+  cat <<'HELP'
+Usage: ./jclaw [workflow|guardrails|observability] [tui|plain]
+       ./jclaw skills [intensity] 'source message'
+       ./jclaw graph
+       ./jclaw codex
+       ./jclaw --help
+
+workflow       Round 5: reviewed proposal or blocked, with no human send prompt.
+guardrails     Round 6: human approval/rejection and validated mock delivery (default).
+observability  Round 7: same guardrails path, with round-7 trace metadata.
+plain / tui    Guardrails on stdout / terminal UI.
+skills         Standalone corporate-speak runner; no delivery.
+graph          Generate pipeline.mmd from the live strategy.
+codex          Probe typed Codex output.
+HELP
+}
+
+mode="${1:-guardrails}"
+case "$mode" in
+  --help|-h) usage; exit 0 ;;
+  workflow|guardrails|observability)
+    if [ "$#" -gt 0 ]; then shift; fi
+    surface="${1:-tui}"
+    if [ "$surface" != tui ] && [ "$surface" != plain ]; then usage >&2; exit 2; fi
+    if [ "$#" -gt 0 ]; then shift; fi
+    if [ "$#" -gt 0 ]; then usage >&2; exit 2; fi
+    ;;
+  tui|plain) surface="$mode"; shift ;;
+  skills|graph|codex) shift ;;
+  *) usage >&2; exit 2 ;;
+esac
+
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
 if [ -z "${GOOGLE_API_KEY:-}" ]; then
   echo "GOOGLE_API_KEY is not set. Put it in .env (see .env.example)." >&2
   exit 1
 fi
 
-ASK="Get me out of the Basic AI Proficiency Training on Tuesday, run by Dana from People Ops. Don't reuse an excuse I've already used on her - tell me which ones you're avoiding."
-
-# Every round opens with the SAME sentence. Identical input, four different
-# behaviours - that is the comparison, so it must not be retyped slightly differently.
-# In round 1, push it to send the email. It can draft, but it has no tools.
-seed() {
-  if command -v pbcopy >/dev/null 2>&1; then printf '%s' "$ASK" | pbcopy; fi
-}
-
-case "${1:-run}" in
-  1|2|3|4)
-    # Switch only when Git can preserve local work. Never replace tracked files
-    # from the target branch before switching: that discards uncommitted edits.
-    git switch --quiet "round$1"
-    # A round starts from the three committed prior declines: whatever earlier runs
-    # wrote into memory/ (and the vector cache) goes. A bare ./jclaw re-run KEEPS it -
-    # that continuity across processes is the round 3 beat.
-    git clean -fdqx -- memory
-    seed
-    exec ./jclaw            # re-exec: this file may differ on the branch we just entered
-    ;;
+case "$mode" in
+  workflow) export JCLAW_ROUND=5 JCLAW_REVIEW_ONLY=1 ;;
+  observability) export JCLAW_ROUND=7 JCLAW_REVIEW_ONLY=0 ;;
+  *) export JCLAW_ROUND=6 JCLAW_REVIEW_ONLY=0 ;;
 esac
 
-# Always rebuild. build/ is gitignored so it survives a checkout - guarding on "does
-# the binary exist" would silently launch the PREVIOUS round.
-./gradlew -q :app:installDist :mocks:mcpJars >/dev/null 2>&1
-
-case "${1:-run}" in
-  tui)    exec app/build/install/app/bin/app-tui ;;
-  plain)  exec app/build/install/app/bin/app ;;
-  skills) shift; exec app/build/install/app/bin/app-skills "$@" ;;
-  graph)  exec app/build/install/app/bin/app-graph ;;
-  codex)  exec app/build/install/app/bin/app-codex ;;
-  run|*)  exec app/build/install/app/bin/app-tui ;;
+./gradlew -q :app:installDist :mocks:mcpJars
+case "$mode" in
+  skills) exec app/build/install/app/bin/app-skills "$@" ;;
+  graph) exec app/build/install/app/bin/app-graph ;;
+  codex) exec app/build/install/app/bin/app-codex ;;
+  *)
+    if [ "$surface" = plain ]; then exec app/build/install/app/bin/app; fi
+    exec app/build/install/app/bin/app-tui
+    ;;
 esac

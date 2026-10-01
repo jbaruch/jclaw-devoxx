@@ -1,7 +1,7 @@
 plugins { application }
 
 dependencies {
-    implementation("ai.koog:agents-features-memory:1.2.0")
+    implementation("ai.koog:agents-features-memory:1.3.0")
     testImplementation("io.kotest:kotest-runner-junit5:6.0.3")
     testImplementation("io.kotest:kotest-assertions-core:6.0.3")
     implementation(project(":domain"))

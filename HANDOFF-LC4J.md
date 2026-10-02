@@ -25,6 +25,12 @@ session schedule. Use those same jars on both implementations.
 
 ## Round boundaries
 
+The shared `tui/` module supplies the TamboUI stage dashboard. Embed `JclawTui`
+with the LangChain4j mode label and actual `providerLegend`; keep feature and flow
+labels truthful for each checkpoint. Drive candidate, verdict, human decision,
+receipt and memory-write displays from real events. `./jclaw preview` is labelled
+UI fixture data and must not be used as live framework evidence.
+
 | Round | Scope |
 |---|---|
 | 1 | Chatbot |

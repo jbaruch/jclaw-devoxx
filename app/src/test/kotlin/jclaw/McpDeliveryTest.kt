@@ -44,11 +44,13 @@ class McpDeliveryTest : StringSpec({
             root.resolve("documents").createDirectory()
             try {
                 val memory = Memory.open(FixtureEmbedder, root, trace = {})
+                var savedEvents = 0
                 Mcp.boot("organizer-mcp", environment = mapOf("JCLAW_MOCK_DELIVERY" to "success"), onStderr = {}).use { mcp ->
                     deliverApproved(ready, confirm = { false }, send = { error("Held plan must not send") }) shouldBe false
                     root.resolve("documents").listDirectoryEntries().size shouldBe 0
                     val receipt = sendAndRemember(ready, mcp, memory,
-                        onDelivered = { it.delivered shouldBe true }, onMemoryFailure = { throw it })
+                        onDelivered = { it.delivered shouldBe true }, onMemoryFailure = { throw it },
+                        onMemorySaved = { savedEvents++ })
                     receipt.eventId shouldBe ready.request.eventId
                     receipt.organizerName shouldBe ready.request.organizerName
                     receipt.candidateId shouldBe sendEnvelope(ready).candidateId
@@ -59,6 +61,7 @@ class McpDeliveryTest : StringSpec({
                 stored shouldContain ready.request.organizerName
                 stored shouldContain ready.deployment.messageToOrganizer
                 root.resolve("documents").listDirectoryEntries().size shouldBe 1
+                savedEvents shouldBe 1
             } finally { root.toFile().deleteRecursively() }
         }
     }
@@ -72,7 +75,8 @@ class McpDeliveryTest : StringSpec({
                 listOf("refused", "error", "malformed", "wrong-event", "wrong-call", "wrong-candidate").forEach { mode ->
                     Mcp.boot("organizer-mcp", environment = mapOf("JCLAW_MOCK_DELIVERY" to mode), onStderr = {}).use { mcp ->
                         suspend fun attempt() = sendAndRemember(ready, mcp, memory,
-                            onDelivered = { error("$mode must not announce success") }, onMemoryFailure = { throw it })
+                            onDelivered = { error("$mode must not announce success") }, onMemoryFailure = { throw it },
+                            onMemorySaved = { error("$mode must not announce a persisted fact") })
                         if (mode == "refused") shouldThrow<DeliveryRejected> { attempt() }
                         else shouldThrow<DeliveryUnconfirmed> { attempt() }
                     }

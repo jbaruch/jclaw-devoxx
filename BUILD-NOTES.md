@@ -50,10 +50,10 @@ remain necessary evidence beyond reading a skill.
 
 ## Verification boundary
 
-`./gradlew build` passes **49 tests**, including native graph execution, the full
+`./gradlew build` passes **51 tests**, including native graph execution, the full
 typed review loop, human retry constraints, approval gates, CLI schema parsing,
 raw receipt validation, real stdio MCP fixtures, exact-target resolution, memory
-persistence/reopening, skill discovery/file scope and trace metadata. These tests
+persistence/reopening, skill discovery/file scope, terminal-column wrapping and trace metadata. These tests
 use fixture responses and local mock processes, without paid model calls.
 
 ## Live stdout rehearsal — October 1, 2026
@@ -78,7 +78,34 @@ Redacted run logs and API evidence are kept in ignored local logs/. Local keys,
 vectors and generated sent-history documents are also excluded from Git; only
 the three fictional seed documents are committed.
 
-Full terminal/projector rehearsal, cross-framework parity and the Port epilogue
+## TamboUI stage dashboard and terminal checks
+
+The dashboard uses native Toolkit panels, persistent scroll lists, Markdown,
+tabs, an animated spinner, bracketed paste, mouse capture and focused borders.
+Wide terminals show conversation/current candidate beside timed trace/evidence;
+compact terminals keep the current message readable. F1–F4 open full inspection
+views. Text rewraps on resize using terminal display widths. The current candidate,
+critic verdict, human gate, validated receipt and memory-write status come from
+application events; no percentage progress or inferred delivery is displayed.
+
+Actual JLine/TamboUI PTY runs checked 150×48, 90×28 and 90×24 layouts, F1–F4 switching,
+Tab/Shift+Tab, mouse focus, candidate PageDown/Home/wheel scrolling, preserved input
+across view changes and resize during
+the human decision. A labelled provider-free `./jclaw preview` exercises fixture
+events without model, MCP or memory calls; it is not execution evidence.
+
+The first real TUI run retrieved the earlier rehearsal's sent-history document,
+exhausted two refinements and stayed blocked (77 s on the dashboard), with no
+delivery or new fact. A second run used an isolated copy of the three shared seed
+documents: the first candidate was approved, the recipient remained canonical
+through resize, the mock receipt was validated and exactly one fact was written.
+That run reached the human gate 28.7 s after startup and delivery at 36.0 s,
+including inspection interactions. These are observed paths, not benchmarks.
+A separate live TUI rewrite visibly read the corporate-speak skill, completed
+as a chat reply and showed no attempted delivery or new sent-history write.
+
+Native terminal-output captures remain in ignored logs/. Physical projector
+readability, full-show rehearsal, cross-framework parity and the Port epilogue
 remain pending. Complete the app first, then derive step branches by removing
 features. Human approval, mock delivery and final ingestion still sit outside the
 native agent trace; neither that coverage nor equivalent CLI token pricing is claimed.

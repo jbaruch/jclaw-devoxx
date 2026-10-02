@@ -7,7 +7,8 @@ j-claw is a personal assistant. Our shared demo task asks it to get Baruch out o
 Basic AI Proficiency Training on Tuesday, run by Dana from People Ops, while
 avoiding excuses already used with her. The calendar and organizer are mock MCP
 servers; delivery never contacts a real person. Their fictional training takes
-place on Tuesday October 6; this fixture is separate from the real session schedule.
+place on Tuesday October 6; its conference conflict is also fictional and separate
+from the real session schedule.
 
 Built against **Koog 1.3.0**. This repository starts from the
 [IdeaConf demo](https://github.com/jbaruch/jclaw-demo), with a reviewed Devoxx baseline.
@@ -69,6 +70,7 @@ Bare `./jclaw` opens guardrails mode. Other tools:
 ./jclaw graph
 ./jclaw graph native       # native task/verification helper teaching graph; no API calls
 ./jclaw codex
+./jclaw preview            # labelled TamboUI fixture rehearsal; no provider calls or actions
 JCLAW_MOCK_DELIVERY=wrong-candidate ./jclaw guardrails plain
 ```
 
@@ -76,6 +78,17 @@ Optional Langfuse credentials enable Koog OpenTelemetry export. API usage and
 CLI input/output/duration coverage differ; CLI cost is not fabricated. Human
 confirmation, application-owned delivery and the final memory write currently
 sit outside the native agent trace.
+
+The default stage UI uses TamboUI's wide dashboard with a pinned current candidate,
+timed trace and evidence panel. F1–F4 switch between the live dashboard and full-screen
+candidate, trace and evidence views. Tab or a click changes focus; PgUp/PgDn and the
+mouse wheel inspect history. Narrow terminals keep the current message large.
+See [the TamboUI controls](tui/README.md) and use `./jclaw preview` to check the layout.
+
+![TamboUI dashboard with clearly labelled fixture data](docs/tamboui-preview.png)
+
+The screenshot is the provider-free UI preview; live run evidence is recorded in
+[BUILD-NOTES.md](BUILD-NOTES.md).
 
 ## The seven-round build
 

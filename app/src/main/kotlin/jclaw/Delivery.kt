@@ -56,6 +56,7 @@ internal suspend fun sendAndRemember(
     memory: Memory,
     onDelivered: suspend (DeclineReceipt) -> Unit,
     onMemoryFailure: (Exception) -> Unit,
+    onMemorySaved: () -> Unit = {},
 ): DeclineReceipt {
     val receipt = mcp.sendDecline(ready)
     onDelivered(receipt)
@@ -63,6 +64,7 @@ internal suspend fun sendAndRemember(
         memory.add(listOf(Memory.story(ready.request.eventId, ready.request.organizerName,
             ready.deployment.flavor.name, ready.deployment.messageToOrganizer)))
     } catch (cancelled: CancellationException) { throw cancelled }
-    catch (error: Exception) { onMemoryFailure(error) }
+    catch (error: Exception) { onMemoryFailure(error); return receipt }
+    onMemorySaved()
     return receipt
 }

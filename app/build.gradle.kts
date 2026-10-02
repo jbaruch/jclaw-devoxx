@@ -73,13 +73,14 @@ tasks.named<JavaExec>("run") {
     standardInput = System.`in`
 }
 
-// The application plugin scripts only mainClass. The demo has four entry points, and
+// The application plugin scripts only mainClass. The demo has several entry points, and
 // on stage every one of them must run without Gradle in the loop.
 listOf(
     "app-tui" to "jclaw.TuiKt",
     "app-skills" to "jclaw.SkillsKt",
     "app-graph" to "jclaw.GraphKt",
     "app-codex" to "jclaw.TypedCodexProbeKt",
+    "app-preview" to "jclaw.PreviewKt",
 ).forEach { (scriptName, main) ->
     val t = tasks.register<CreateStartScripts>("startScripts_$scriptName") {
         applicationName = scriptName

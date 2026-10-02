@@ -35,15 +35,15 @@ internal fun markdownLines(message: String, width: Int): List<Line> {
     return if (labelled) listOf(Line.from(Span.styled("j-claw:", REPLY_STYLE.bold()))) + rows else rows
 }
 
-private val REPLY_STYLE = Style.EMPTY.fg(Color.BLUE)
+private val REPLY_STYLE = Style.EMPTY.fg(Color.WHITE)
 
-// Preserve the chat role's blue foreground. Weight and emphasis come from Markdown,
-// and block quotes/code must remain legible on the presentation terminal.
+// The dashboard sets a black canvas. White paragraphs and saturated accents remain
+// readable at projection size; Markdown supplies weight, emphasis and block structure.
 private val REPLY_MARKDOWN_STYLES = MarkdownStyles.builder().apply {
-    (1..6).forEach { heading(it, REPLY_STYLE.bold()) }
-    inlineCode(REPLY_STYLE.underlined())
+    (1..6).forEach { heading(it, Style.EMPTY.fg(Color.CYAN).bold()) }
+    inlineCode(Style.EMPTY.fg(Color.YELLOW).underlined())
     codeBlock(REPLY_STYLE)
-    link(REPLY_STYLE.underlined())
+    link(Style.EMPTY.fg(Color.CYAN).underlined())
     blockquote(REPLY_STYLE.italic())
     listMarker(REPLY_STYLE)
     html(REPLY_STYLE)

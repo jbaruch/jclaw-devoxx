@@ -17,6 +17,14 @@ Append `plain` for stdout. Use `./jclaw --help` for standalone tools.
 The launcher sources the ignored local .env, builds the installed app and mock
 jars, and keeps memory intact. It never changes branches or clears local data.
 
+Use the TamboUI dashboard as the main stage view. At 120+ columns and 32+ rows,
+conversation/current candidate sit beside timed trace/evidence. F1 returns to the
+dashboard and prompt; F2 expands the current message, F3 the trace, F4 the evidence.
+Tab/Shift+Tab or a click changes focus; PgUp/PgDn and the mouse wheel inspect history.
+Enlarge the terminal font and use the full-screen views for individual teaching beats.
+`./jclaw preview` supplies labelled fixture-only events for layout checks without
+provider calls or actions. It must not be presented as an executed agent run.
+
 Complete the app on `main` before deriving step branches by removing features.
 Rounds 1–4 then need their own branches before the seven-round run is stage-ready.
 Do not present the combined baseline as those missing checkpoints.
@@ -77,12 +85,12 @@ issue #31 / PR #32; the relevant updated guidance was reviewed against this buil
 ## Remaining rehearsal work
 
 - See BUILD-NOTES.md for the completed live stdout runs, plugin 0.6.0 review and trace evidence.
-- Finish the complete app and terminal rehearsal; the native-helper example now compiles and passes graph tests.
+- Continue full-show rehearsal; the native-helper example passes graph tests, and the TamboUI dashboard passed native terminal interaction checks and live guardrails delivery.
 - Derive the seven step branches from the completed app by removing features.
 - Use the refreshed fictional Tuesday October 6 fixture on both sides.
 - Rehearse the verified Google/Claude/Codex paths in the terminal; agree exact CLI model versions with Viktor.
 - Exercise the unavailable critic recovery on stage; approval, substantive rejection and the refinement limit have run live.
-- Verify projector readability in the TUI; runtime skill listing/reading has run live on stdout.
+- Verify physical projector readability in the TUI; wide/compact terminal layouts, view switching, keyboard/mouse focus, input preservation and resize during approval are checked. Runtime skill reading and a rewrite without sending have run live in the TUI.
 - Walk the arrived Langfuse traces on the projector and agree comparable evidence with Viktor.
 - Build and rehearse the same workflow in Port.
 - Time the full sequence, prepare clearly labelled recovery checkpoints and final resources.

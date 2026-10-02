@@ -1,8 +1,9 @@
 package jclaw.domain
 
 /**
- * The explicit decline demo fixture: a mandatory corporate AI course,
+ * The fictional decline demo fixture: a mandatory corporate AI course,
  * scheduled against a conference talk about building AI agents.
+ * Its calendar conflict is not the real Devoxx session schedule.
  */
 public object Scenario {
     public const val EVENT_ID: String = "basic-ai-proficiency-2026"

@@ -50,10 +50,11 @@ remain necessary evidence beyond reading a skill.
 
 ## Verification boundary
 
-`./gradlew build` passes **51 tests**, including native graph execution, the full
+The app test suite passes **58 tests**, including native graph execution, the full
 typed review loop, human retry constraints, approval gates, CLI schema parsing,
 raw receipt validation, real stdio MCP fixtures, exact-target resolution, memory
-persistence/reopening, skill discovery/file scope, terminal-column wrapping and trace metadata. These tests
+persistence/reopening, skill discovery/file scope, terminal-column wrapping, trace metadata
+and the Port action boundary. `:app:test :app:installDist` passes on JDK 21. These tests
 use fixture responses and local mock processes, without paid model calls.
 
 ## Live stdout rehearsal — October 1, 2026
@@ -105,7 +106,37 @@ A separate live TUI rewrite visibly read the corporate-speak skill, completed
 as a chat reply and showed no attempted delivery or new sent-history write.
 
 Native terminal-output captures remain in ignored logs/. Physical projector
-readability, full-show rehearsal, cross-framework parity and the Port epilogue
+readability, full-show rehearsal, cross-framework parity and the live Port epilogue
 remain pending. Complete the app first, then derive step branches by removing
 features. Human approval, mock delivery and final ingestion still sit outside the
 native agent trace; neither that coverage nor equivalent CLI token pricing is claimed.
+
+## Port closing package
+
+The local bridge uses Ktor 3.4 and the same running calendar/organizer MCP mocks,
+canonical recipient lookup, review decision, exact-candidate envelope and raw
+receipt validator as the app. Seven Port tests cover context correction, invalid
+verdicts, exhausted refinement, modified/wrong/expired approvals, unsuccessful
+receipts, confirmed replay after restart and HTTP credential separation.
+
+The packaged bridge also passed MCP JavaScript reference SDK **1.31.0** over
+Streamable HTTP: initialize, list tools, calendar and organizer calls. Exactly two
+read tools were available. This check caught a blocking server startup and null
+optional fields incompatible with the reference SDK; startup now suspends and
+MCP results use the SDK's `McpJson` serializer. The final packaged check also passed
+clean SIGTERM shutdown and occupied-port startup failure after mock-process cleanup;
+the shutdown callback closes resources without calling `System.exit` inside a JVM
+shutdown hook. The check is reproducible with
+`port/reference-client/probe.mjs`.
+
+The generated native Port graph has 45 nodes and 57 connections; local validation
+checks typed output, bounded paths, explicit tool access, native INPUT outlets,
+exact-candidate delivery and receipt-gated history. Two refinements and one human
+replacement are expanded into a finite DAG. This differs from the JVM's ongoing
+conversation. Configured Port APIs also differ from the subscription CLI stages.
+
+The workflow, blueprints, fictional fixture seeds, two skills and MCP connector
+are reviewable under `port/preview/`. No Port organization was modified. Target
+schema acceptance, connected tool cache, model availability and native INPUT/run
+behavior require the user's target instance. See `port/README.md` for setup and
+the five-minute closing run.

@@ -103,12 +103,18 @@ are created yet.
 | 2 | Tools / MCP | Dedicated checkpoint pending; mocks included |
 | 3 | Memory | Dedicated checkpoint pending; implementation included |
 | 4 | Skills | Dedicated checkpoint pending; runtime skill and runner included |
-| 5 | Multi-agent workflows | Native example and full CLI workflow verified; terminal rehearsal pending |
+| 5 | Multi-agent workflows | Native example, full CLI workflow and live TamboUI paths verified |
 | 6 | Guardrails / human loop | Live rejection, bounded blocking, approved delivery and skill follow-up verified |
 | 7 | Observability | Live agent/CLI traces and critic request metadata verified; projector walkthrough pending |
 
-The closing Port implementation is planned separately from the competitive
-rounds and is not implemented here yet. The native task/verification teaching
+The closing [Port implementation](port/README.md) is prepared: native workflow,
+context seeds, skills, read-only MCP connector and a working JVM mock bridge.
+It has not been deployed or run in a Port instance. `./jclaw port` starts the
+bridge; `python3 port/setup.py` regenerates the local review package without
+connecting to Port. Target instance access and model/reviewer configuration
+are the remaining setup inputs.
+
+The native task/verification teaching
 example is compiled in app/src/main/kotlin/jclaw/NativeWorkflow.kt and starts
 after request identification. It accepts per-role API models and an appropriate
 executor; it is separate from the full app's subscription transport. Its loop is

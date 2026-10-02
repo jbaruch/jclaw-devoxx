@@ -1,0 +1,1766 @@
+{
+  "identifier": "jclaw_decline",
+  "title": "j-claw — reviewed decline",
+  "icon": "Code",
+  "category": "Devoxx demo",
+  "description": "Same fictional task: actual read evidence, typed stages, two refinements, native human approval, exact-candidate mock delivery and receipt-backed sent history. One human replacement is expanded in this DAG; another replacement stops for a fresh request. Port invokes APIs, not the subscription CLIs.",
+  "allowAnyoneToViewRuns": false,
+  "nodes": [
+    {
+      "identifier": "trigger",
+      "title": "Get me out of training",
+      "config": {
+        "type": "SELF_SERVE_TRIGGER",
+        "permissions": {
+          "roles": [
+            "Admin",
+            "Member"
+          ]
+        },
+        "userInputs": {
+          "properties": {
+            "request": {
+              "type": "string",
+              "title": "Current request",
+              "default": "Get me out of the Basic AI Proficiency Training on Tuesday, run by Dana from People Ops. Don't reuse an excuse I've already used on her - tell me which ones you're avoiding."
+            }
+          },
+          "required": [
+            "request"
+          ]
+        }
+      }
+    },
+    {
+      "identifier": "sent_history",
+      "title": "Read actual sent records",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "https://api.port.io/v1/entities/search",
+        "method": "POST",
+        "synchronized": true,
+        "onFailure": "terminate",
+        "body": {
+          "combinator": "and",
+          "rules": [
+            {
+              "property": "$blueprint",
+              "operator": "=",
+              "value": "jclaw_sent_fact"
+            },
+            {
+              "property": "organizerName",
+              "operator": "=",
+              "value": "Dana from People Ops"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "identifier": "user_context",
+      "title": "Read the user context",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "https://api.port.io/v1/blueprints/jclaw_profile/entities/jclaw-baruch",
+        "method": "GET",
+        "synchronized": true,
+        "onFailure": "terminate"
+      }
+    },
+    {
+      "identifier": "a0_identify",
+      "title": "Identify the obligation",
+      "config": {
+        "type": "AI",
+        "systemPrompt": "You are j-claw. Use only supplied facts and return the requested typed result. Never take an external action.",
+        "userPrompt": "Call jclaw-read_getCalendar and jclaw-read_getOrganizerSensitivity. Identify the selected obligation; copy its event ID and exact organizer. Calendar decline flags are not excuse history. Return a DeclineRequest. Current instruction: {{ .outputs.trigger.request }}\nUser context: {{ .outputs.user_context.response.data.entity.properties.context }}",
+        "tools": [
+          "jclaw-read_getCalendar",
+          "jclaw-read_getOrganizerSensitivity"
+        ],
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "eventId": {
+              "type": "string"
+            },
+            "recentlyUsedFlavors": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "CALENDAR_CONFLICT",
+                  "FAMILY_OBLIGATION",
+                  "CUSTOMER_ESCALATION",
+                  "DEADLINE",
+                  "ALREADY_PROFICIENT",
+                  "EXISTENTIAL_CRISIS"
+                ]
+              }
+            },
+            "knownAttendees": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "organizerName": {
+              "type": "string"
+            },
+            "userInstruction": {
+              "type": "string"
+            },
+            "previouslyProposedFlavors": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "CALENDAR_CONFLICT",
+                  "FAMILY_OBLIGATION",
+                  "CUSTOMER_ESCALATION",
+                  "DEADLINE",
+                  "ALREADY_PROFICIENT",
+                  "EXISTENTIAL_CRISIS"
+                ]
+              }
+            }
+          },
+          "required": [
+            "eventId",
+            "recentlyUsedFlavors",
+            "knownAttendees",
+            "organizerName",
+            "userInstruction",
+            "previouslyProposedFlavors"
+          ],
+          "additionalProperties": false
+        },
+        "mcpServers": [
+          {
+            "identifier": "jclaw-read"
+          }
+        ]
+      }
+    },
+    {
+      "identifier": "a0_context",
+      "title": "Canonical request + sent evidence",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "https://jclaw-bridge.example.invalid/context",
+        "method": "POST",
+        "synchronized": true,
+        "onFailure": "terminate",
+        "headers": {
+          "Authorization": "Bearer {{ .secrets[\"JCLAW_PORT_ACTION_TOKEN\"] }}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "identified": "{{ .outputs.a0_identify.response | fromjson }}",
+          "userInstruction": "{{ .outputs.trigger.request }}",
+          "sentFacts": "{{ .outputs.sent_history.response.data.entities | map(.properties | {eventId, organizerName, flavor, message, deliveredAt}) | (.) }}",
+          "previouslyProposedFlavors": []
+        }
+      }
+    },
+    {
+      "identifier": "a0_draft",
+      "title": "Draft a typed plan",
+      "config": {
+        "type": "AI",
+        "systemPrompt": "You are j-claw. Use only supplied facts and return the requested typed result. Never take an external action.",
+        "userPrompt": "Draft the best plan. Honor userInstruction and avoid recentlyUsedFlavors and previouslyProposedFlavors. Write messageToOrganizer and hallwayScript. Set fakeCalendarEventId=null; drafting creates no calendar event.\nCurrent request: {{ .outputs.a0_context.response.data }}\nUser context: {{ .outputs.user_context.response.data.entity.properties.context }}",
+        "tools": [
+          "^$"
+        ],
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "flavor": {
+              "type": "string",
+              "enum": [
+                "CALENDAR_CONFLICT",
+                "FAMILY_OBLIGATION",
+                "CUSTOMER_ESCALATION",
+                "DEADLINE",
+                "ALREADY_PROFICIENT",
+                "EXISTENTIAL_CRISIS"
+              ]
+            },
+            "fakeCalendarEventId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "messageToOrganizer": {
+              "type": "string"
+            },
+            "hallwayScript": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "flavor",
+            "fakeCalendarEventId",
+            "messageToOrganizer",
+            "hallwayScript"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "identifier": "a0_judge_0",
+      "title": "Judge the current candidate",
+      "config": {
+        "type": "AI",
+        "systemPrompt": "You are j-claw. Use only supplied facts and return the requested typed result. Never take an external action.",
+        "userPrompt": "Load skill jclaw-decline-review. Judge this exact plan against the current request, including latest human constraints and both avoided-flavor lists. An honest first draft may pass. Approve only when this exact candidate is ready for the human to consider sending.\nCurrent request: {{ .outputs.a0_context.response.data }}\nPlan: {{ .outputs.a0_draft.response | fromjson }}\nUser context: {{ .outputs.user_context.response.data.entity.properties.context }}",
+        "tools": [
+          "load_skill"
+        ],
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "tier": {
+              "type": "string",
+              "enum": [
+                "AIRTIGHT",
+                "CREDIBLE",
+                "THIN",
+                "HR_WILL_NOTICE"
+              ]
+            },
+            "approved": {
+              "type": "boolean"
+            },
+            "feedback": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "tier",
+            "approved",
+            "feedback"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "identifier": "a0_review_0",
+      "title": "Validate verdict + retry bound",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "https://jclaw-bridge.example.invalid/review",
+        "method": "POST",
+        "synchronized": true,
+        "onFailure": "terminate",
+        "headers": {
+          "Authorization": "Bearer {{ .secrets[\"JCLAW_PORT_ACTION_TOKEN\"] }}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "request": "{{ .outputs.a0_context.response.data }}",
+          "plan": "{{ .outputs.a0_draft.response | fromjson }}",
+          "critique": "{{ try (.outputs.a0_judge_0.response | fromjson) catch null }}",
+          "refinements": 0,
+          "workflowRunId": "{{ .workflowRun.identifier }}"
+        }
+      }
+    },
+    {
+      "identifier": "a0_route_0",
+      "title": "Approved / refine / blocked",
+      "config": {
+        "type": "CONDITION",
+        "outlets": [
+          {
+            "identifier": "approve",
+            "title": "Reviewed proposal",
+            "expression": ".outputs.a0_review_0.response.data.route == \"APPROVE\"",
+            "statusLabel": {
+              "text": "\"Reviewed proposal\"",
+              "variant": "success"
+            }
+          },
+          {
+            "identifier": "refine",
+            "title": "Refine candidate",
+            "expression": ".outputs.a0_review_0.response.data.route == \"REFINE\"",
+            "statusLabel": {
+              "text": "\"Refine candidate\"",
+              "variant": "alert"
+            }
+          },
+          {
+            "identifier": "block",
+            "title": "Blocked — no delivery",
+            "expression": ".outputs.a0_review_0.response.data.route == \"BLOCK\"",
+            "statusLabel": {
+              "text": "\"Blocked \\u2014 no delivery\"",
+              "variant": "alert"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "identifier": "a0_refine_1",
+      "title": "Refine 1 of 2",
+      "config": {
+        "type": "AI",
+        "systemPrompt": "You are j-claw. Use only supplied facts and return the requested typed result. Never take an external action.",
+        "userPrompt": "Revise the plan using the judge feedback. Honor the same current request, userInstruction and avoided flavors. Return the complete typed plan; no external actions. Set fakeCalendarEventId=null.\nRequest: {{ .outputs.a0_context.response.data }}\nPrevious plan: {{ .outputs.a0_draft.response | fromjson }}\nFeedback: {{ .outputs.a0_review_0.response.data.feedback }}\nUser context: {{ .outputs.user_context.response.data.entity.properties.context }}",
+        "tools": [
+          "^$"
+        ],
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "flavor": {
+              "type": "string",
+              "enum": [
+                "CALENDAR_CONFLICT",
+                "FAMILY_OBLIGATION",
+                "CUSTOMER_ESCALATION",
+                "DEADLINE",
+                "ALREADY_PROFICIENT",
+                "EXISTENTIAL_CRISIS"
+              ]
+            },
+            "fakeCalendarEventId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "messageToOrganizer": {
+              "type": "string"
+            },
+            "hallwayScript": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "flavor",
+            "fakeCalendarEventId",
+            "messageToOrganizer",
+            "hallwayScript"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "identifier": "a0_judge_1",
+      "title": "Judge the current candidate (refinement 1)",
+      "config": {
+        "type": "AI",
+        "systemPrompt": "You are j-claw. Use only supplied facts and return the requested typed result. Never take an external action.",
+        "userPrompt": "Load skill jclaw-decline-review. Judge this exact plan against the current request, including latest human constraints and both avoided-flavor lists. An honest first draft may pass. Approve only when this exact candidate is ready for the human to consider sending.\nCurrent request: {{ .outputs.a0_context.response.data }}\nPlan: {{ .outputs.a0_refine_1.response | fromjson }}\nUser context: {{ .outputs.user_context.response.data.entity.properties.context }}",
+        "tools": [
+          "load_skill"
+        ],
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "tier": {
+              "type": "string",
+              "enum": [
+                "AIRTIGHT",
+                "CREDIBLE",
+                "THIN",
+                "HR_WILL_NOTICE"
+              ]
+            },
+            "approved": {
+              "type": "boolean"
+            },
+            "feedback": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "tier",
+            "approved",
+            "feedback"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "identifier": "a0_review_1",
+      "title": "Validate verdict + retry bound",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "https://jclaw-bridge.example.invalid/review",
+        "method": "POST",
+        "synchronized": true,
+        "onFailure": "terminate",
+        "headers": {
+          "Authorization": "Bearer {{ .secrets[\"JCLAW_PORT_ACTION_TOKEN\"] }}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "request": "{{ .outputs.a0_context.response.data }}",
+          "plan": "{{ .outputs.a0_refine_1.response | fromjson }}",
+          "critique": "{{ try (.outputs.a0_judge_1.response | fromjson) catch null }}",
+          "refinements": 1,
+          "workflowRunId": "{{ .workflowRun.identifier }}"
+        }
+      }
+    },
+    {
+      "identifier": "a0_route_1",
+      "title": "Approved / refine / blocked",
+      "config": {
+        "type": "CONDITION",
+        "outlets": [
+          {
+            "identifier": "approve",
+            "title": "Reviewed proposal",
+            "expression": ".outputs.a0_review_1.response.data.route == \"APPROVE\"",
+            "statusLabel": {
+              "text": "\"Reviewed proposal\"",
+              "variant": "success"
+            }
+          },
+          {
+            "identifier": "refine",
+            "title": "Refine candidate",
+            "expression": ".outputs.a0_review_1.response.data.route == \"REFINE\"",
+            "statusLabel": {
+              "text": "\"Refine candidate\"",
+              "variant": "alert"
+            }
+          },
+          {
+            "identifier": "block",
+            "title": "Blocked — no delivery",
+            "expression": ".outputs.a0_review_1.response.data.route == \"BLOCK\"",
+            "statusLabel": {
+              "text": "\"Blocked \\u2014 no delivery\"",
+              "variant": "alert"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "identifier": "a0_refine_2",
+      "title": "Refine 2 of 2",
+      "config": {
+        "type": "AI",
+        "systemPrompt": "You are j-claw. Use only supplied facts and return the requested typed result. Never take an external action.",
+        "userPrompt": "Revise the plan using the judge feedback. Honor the same current request, userInstruction and avoided flavors. Return the complete typed plan; no external actions. Set fakeCalendarEventId=null.\nRequest: {{ .outputs.a0_context.response.data }}\nPrevious plan: {{ .outputs.a0_refine_1.response | fromjson }}\nFeedback: {{ .outputs.a0_review_1.response.data.feedback }}\nUser context: {{ .outputs.user_context.response.data.entity.properties.context }}",
+        "tools": [
+          "^$"
+        ],
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "flavor": {
+              "type": "string",
+              "enum": [
+                "CALENDAR_CONFLICT",
+                "FAMILY_OBLIGATION",
+                "CUSTOMER_ESCALATION",
+                "DEADLINE",
+                "ALREADY_PROFICIENT",
+                "EXISTENTIAL_CRISIS"
+              ]
+            },
+            "fakeCalendarEventId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "messageToOrganizer": {
+              "type": "string"
+            },
+            "hallwayScript": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "flavor",
+            "fakeCalendarEventId",
+            "messageToOrganizer",
+            "hallwayScript"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "identifier": "a0_judge_2",
+      "title": "Judge the current candidate (refinement 2)",
+      "config": {
+        "type": "AI",
+        "systemPrompt": "You are j-claw. Use only supplied facts and return the requested typed result. Never take an external action.",
+        "userPrompt": "Load skill jclaw-decline-review. Judge this exact plan against the current request, including latest human constraints and both avoided-flavor lists. An honest first draft may pass. Approve only when this exact candidate is ready for the human to consider sending.\nCurrent request: {{ .outputs.a0_context.response.data }}\nPlan: {{ .outputs.a0_refine_2.response | fromjson }}\nUser context: {{ .outputs.user_context.response.data.entity.properties.context }}",
+        "tools": [
+          "load_skill"
+        ],
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "tier": {
+              "type": "string",
+              "enum": [
+                "AIRTIGHT",
+                "CREDIBLE",
+                "THIN",
+                "HR_WILL_NOTICE"
+              ]
+            },
+            "approved": {
+              "type": "boolean"
+            },
+            "feedback": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "tier",
+            "approved",
+            "feedback"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "identifier": "a0_review_2",
+      "title": "Validate verdict + retry bound",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "https://jclaw-bridge.example.invalid/review",
+        "method": "POST",
+        "synchronized": true,
+        "onFailure": "terminate",
+        "headers": {
+          "Authorization": "Bearer {{ .secrets[\"JCLAW_PORT_ACTION_TOKEN\"] }}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "request": "{{ .outputs.a0_context.response.data }}",
+          "plan": "{{ .outputs.a0_refine_2.response | fromjson }}",
+          "critique": "{{ try (.outputs.a0_judge_2.response | fromjson) catch null }}",
+          "refinements": 2,
+          "workflowRunId": "{{ .workflowRun.identifier }}"
+        }
+      }
+    },
+    {
+      "identifier": "a0_route_2",
+      "title": "Approved / refine / blocked",
+      "config": {
+        "type": "CONDITION",
+        "outlets": [
+          {
+            "identifier": "approve",
+            "title": "Reviewed proposal",
+            "expression": ".outputs.a0_review_2.response.data.route == \"APPROVE\"",
+            "statusLabel": {
+              "text": "\"Reviewed proposal\"",
+              "variant": "success"
+            }
+          },
+          {
+            "identifier": "refine",
+            "title": "Refine candidate",
+            "expression": ".outputs.a0_review_2.response.data.route == \"REFINE\"",
+            "statusLabel": {
+              "text": "\"Refine candidate\"",
+              "variant": "alert"
+            }
+          },
+          {
+            "identifier": "block",
+            "title": "Blocked — no delivery",
+            "expression": ".outputs.a0_review_2.response.data.route == \"BLOCK\"",
+            "statusLabel": {
+              "text": "\"Blocked \\u2014 no delivery\"",
+              "variant": "alert"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "identifier": "a0_ready",
+      "title": "Bind the reviewed candidate",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "https://jclaw-bridge.example.invalid/review",
+        "method": "POST",
+        "synchronized": true,
+        "onFailure": "terminate",
+        "headers": {
+          "Authorization": "Bearer {{ .secrets[\"JCLAW_PORT_ACTION_TOKEN\"] }}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "request": "{{ .outputs.a0_context.response.data }}",
+          "plan": "{{ ([.outputs.a0_review_0.response.data, .outputs.a0_review_1.response.data, .outputs.a0_review_2.response.data] | map(select(.route == \"APPROVE\")) | if length == 1 then .[0] else error(\"No unique approved candidate\") end) | .prepared.plan }}",
+          "critique": "{{ ([.outputs.a0_review_0.response.data, .outputs.a0_review_1.response.data, .outputs.a0_review_2.response.data] | map(select(.route == \"APPROVE\")) | if length == 1 then .[0] else error(\"No unique approved candidate\") end) | .prepared.critique }}",
+          "refinements": "{{ ([.outputs.a0_review_0.response.data, .outputs.a0_review_1.response.data, .outputs.a0_review_2.response.data] | map(select(.route == \"APPROVE\")) | if length == 1 then .[0] else error(\"No unique approved candidate\") end) | .prepared.refinements }}",
+          "workflowRunId": "{{ .workflowRun.identifier }}"
+        }
+      }
+    },
+    {
+      "identifier": "a0_human",
+      "title": "Human review — exact candidate",
+      "config": {
+        "type": "INPUT",
+        "description": "Recipient: {{ .outputs.a0_ready.response.data.prepared.send.organizerName }}\nMessage:\n{{ .outputs.a0_ready.response.data.prepared.send.message }}\nHallway script:\n{{ .outputs.a0_ready.response.data.prepared.plan.hallwayScript }}\nCritic: {{ .outputs.a0_ready.response.data.prepared.critique.feedback }}",
+        "responders": {
+          "users": [
+            "approver@example.test"
+          ]
+        },
+        "notifications": [],
+        "userInputs": {
+          "properties": {
+            "feedback": {
+              "type": "string",
+              "title": "What should change?"
+            },
+            "candidateId": {
+              "type": "string",
+              "title": "Approved candidate",
+              "readOnly": true,
+              "default": "{{ .outputs.a0_ready.response.data.prepared.send.candidateId }}"
+            }
+          },
+          "buttons": [
+            {
+              "identifier": "approve",
+              "label": "Send this exact message",
+              "variant": "PRIMARY"
+            },
+            {
+              "identifier": "hold",
+              "label": "Hold — no action",
+              "variant": "SECONDARY"
+            },
+            {
+              "identifier": "try_another",
+              "label": "Try another approach",
+              "variant": "DANGER"
+            }
+          ]
+        },
+        "outlets": [
+          {
+            "identifier": "approve",
+            "title": "Send this exact message",
+            "evaluationMethod": "button",
+            "numOfResponders": 1,
+            "statusLabel": {
+              "text": "\"Send this exact message\"",
+              "variant": "success"
+            }
+          },
+          {
+            "identifier": "hold",
+            "title": "Hold — no action",
+            "evaluationMethod": "button",
+            "numOfResponders": 1,
+            "statusLabel": {
+              "text": "\"Hold \\u2014 no action\"",
+              "variant": "alert"
+            }
+          },
+          {
+            "identifier": "try_another",
+            "title": "Try another approach",
+            "evaluationMethod": "button",
+            "numOfResponders": 1,
+            "statusLabel": {
+              "text": "\"Try another approach\"",
+              "variant": "alert"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "identifier": "a0_deliver",
+      "title": "Send + validate matching mock receipt",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "https://jclaw-bridge.example.invalid/deliver",
+        "method": "POST",
+        "synchronized": true,
+        "onFailure": "terminate",
+        "headers": {
+          "Authorization": "Bearer {{ .secrets[\"JCLAW_PORT_ACTION_TOKEN\"] }}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "reviewToken": "{{ .outputs.a0_ready.response.data.reviewToken }}",
+          "candidateId": "{{ .outputs.a0_human.responses[0].inputs.candidateId }}",
+          "selectedOutlet": "{{ .outputs.a0_human.selectedOutlet.identifier }}",
+          "buttonIdentifier": "{{ .outputs.a0_human.responses[0].buttonIdentifier }}",
+          "submittedBy": "{{ .outputs.a0_human.responses[0].submitterInfo.submittedBy | if type == \"string\" then . else tojson end }}",
+          "workflowRunId": "{{ .workflowRun.identifier }}"
+        }
+      }
+    },
+    {
+      "identifier": "a0_remember",
+      "title": "Write the confirmed sent fact",
+      "config": {
+        "type": "UPSERT_ENTITY",
+        "blueprintIdentifier": "jclaw_sent_fact",
+        "onFailure": "terminate",
+        "mapping": {
+          "identifier": "jclaw-send-{{ .outputs.a0_deliver.response.data.receipt.callId }}",
+          "title": "Confirmed decline — {{ .outputs.a0_deliver.response.data.sentFact.eventId }}",
+          "properties": {
+            "eventId": "{{ .outputs.a0_deliver.response.data.sentFact.eventId }}",
+            "organizerName": "{{ .outputs.a0_deliver.response.data.sentFact.organizerName }}",
+            "flavor": "{{ .outputs.a0_deliver.response.data.sentFact.flavor }}",
+            "message": "{{ .outputs.a0_deliver.response.data.sentFact.message }}",
+            "deliveredAt": "{{ .outputs.a0_deliver.response.data.sentFact.deliveredAt }}",
+            "source": "Native Port workflow",
+            "candidateId": "{{ .outputs.a0_deliver.response.data.receipt.candidateId }}",
+            "callId": "{{ .outputs.a0_deliver.response.data.receipt.callId }}"
+          },
+          "relations": {
+            "event": "{{ .outputs.a0_deliver.response.data.sentFact.eventId }}"
+          }
+        }
+      }
+    },
+    {
+      "identifier": "a0_blocked",
+      "title": "Blocked — no human override",
+      "config": {
+        "type": "CONDITION",
+        "outlets": [
+          {
+            "identifier": "blocked",
+            "expression": "true",
+            "statusLabel": {
+              "text": "\"Blocked. Nothing sent.\"",
+              "variant": "alert"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "identifier": "a0_held",
+      "title": "Held — nothing sent",
+      "config": {
+        "type": "CONDITION",
+        "outlets": [
+          {
+            "identifier": "held",
+            "expression": "true",
+            "statusLabel": {
+              "text": "\"Held. Nothing sent.\"",
+              "variant": "alert"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "identifier": "a0_stop",
+      "title": "No external action",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "https://jclaw-bridge.example.invalid/health",
+        "method": "GET",
+        "synchronized": true,
+        "onFailure": "terminate"
+      }
+    },
+    {
+      "identifier": "a1_identify",
+      "title": "Identify again with human feedback",
+      "config": {
+        "type": "AI",
+        "systemPrompt": "You are j-claw. Use only supplied facts and return the requested typed result. Never take an external action.",
+        "userPrompt": "Call jclaw-read_getCalendar and jclaw-read_getOrganizerSensitivity. Identify the selected obligation; copy its event ID and exact organizer. Calendar decline flags are not excuse history. Return a DeclineRequest. Current instruction: {{ .outputs.trigger.request + \"\\nHuman feedback: \" + (.outputs.a0_human.responses[0].inputs.feedback // \"Try another approach\") }}\nUser context: {{ .outputs.user_context.response.data.entity.properties.context }}",
+        "tools": [
+          "jclaw-read_getCalendar",
+          "jclaw-read_getOrganizerSensitivity"
+        ],
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "eventId": {
+              "type": "string"
+            },
+            "recentlyUsedFlavors": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "CALENDAR_CONFLICT",
+                  "FAMILY_OBLIGATION",
+                  "CUSTOMER_ESCALATION",
+                  "DEADLINE",
+                  "ALREADY_PROFICIENT",
+                  "EXISTENTIAL_CRISIS"
+                ]
+              }
+            },
+            "knownAttendees": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "organizerName": {
+              "type": "string"
+            },
+            "userInstruction": {
+              "type": "string"
+            },
+            "previouslyProposedFlavors": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "CALENDAR_CONFLICT",
+                  "FAMILY_OBLIGATION",
+                  "CUSTOMER_ESCALATION",
+                  "DEADLINE",
+                  "ALREADY_PROFICIENT",
+                  "EXISTENTIAL_CRISIS"
+                ]
+              }
+            }
+          },
+          "required": [
+            "eventId",
+            "recentlyUsedFlavors",
+            "knownAttendees",
+            "organizerName",
+            "userInstruction",
+            "previouslyProposedFlavors"
+          ],
+          "additionalProperties": false
+        },
+        "mcpServers": [
+          {
+            "identifier": "jclaw-read"
+          }
+        ]
+      }
+    },
+    {
+      "identifier": "a1_context",
+      "title": "Canonical request + sent evidence",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "https://jclaw-bridge.example.invalid/context",
+        "method": "POST",
+        "synchronized": true,
+        "onFailure": "terminate",
+        "headers": {
+          "Authorization": "Bearer {{ .secrets[\"JCLAW_PORT_ACTION_TOKEN\"] }}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "identified": "{{ .outputs.a1_identify.response | fromjson }}",
+          "userInstruction": "{{ .outputs.trigger.request + \"\\nHuman feedback: \" + (.outputs.a0_human.responses[0].inputs.feedback // \"Try another approach\") }}",
+          "sentFacts": "{{ .outputs.sent_history.response.data.entities | map(.properties | {eventId, organizerName, flavor, message, deliveredAt}) | (.) }}",
+          "previouslyProposedFlavors": "{{ .outputs.a0_ready.response.data.prepared.plan.flavor | [.] }}"
+        }
+      }
+    },
+    {
+      "identifier": "a1_draft",
+      "title": "Draft a typed plan",
+      "config": {
+        "type": "AI",
+        "systemPrompt": "You are j-claw. Use only supplied facts and return the requested typed result. Never take an external action.",
+        "userPrompt": "Draft the best plan. Honor userInstruction and avoid recentlyUsedFlavors and previouslyProposedFlavors. Write messageToOrganizer and hallwayScript. Set fakeCalendarEventId=null; drafting creates no calendar event.\nCurrent request: {{ .outputs.a1_context.response.data }}\nUser context: {{ .outputs.user_context.response.data.entity.properties.context }}",
+        "tools": [
+          "^$"
+        ],
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "flavor": {
+              "type": "string",
+              "enum": [
+                "CALENDAR_CONFLICT",
+                "FAMILY_OBLIGATION",
+                "CUSTOMER_ESCALATION",
+                "DEADLINE",
+                "ALREADY_PROFICIENT",
+                "EXISTENTIAL_CRISIS"
+              ]
+            },
+            "fakeCalendarEventId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "messageToOrganizer": {
+              "type": "string"
+            },
+            "hallwayScript": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "flavor",
+            "fakeCalendarEventId",
+            "messageToOrganizer",
+            "hallwayScript"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "identifier": "a1_judge_0",
+      "title": "Judge the current candidate",
+      "config": {
+        "type": "AI",
+        "systemPrompt": "You are j-claw. Use only supplied facts and return the requested typed result. Never take an external action.",
+        "userPrompt": "Load skill jclaw-decline-review. Judge this exact plan against the current request, including latest human constraints and both avoided-flavor lists. An honest first draft may pass. Approve only when this exact candidate is ready for the human to consider sending.\nCurrent request: {{ .outputs.a1_context.response.data }}\nPlan: {{ .outputs.a1_draft.response | fromjson }}\nUser context: {{ .outputs.user_context.response.data.entity.properties.context }}",
+        "tools": [
+          "load_skill"
+        ],
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "tier": {
+              "type": "string",
+              "enum": [
+                "AIRTIGHT",
+                "CREDIBLE",
+                "THIN",
+                "HR_WILL_NOTICE"
+              ]
+            },
+            "approved": {
+              "type": "boolean"
+            },
+            "feedback": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "tier",
+            "approved",
+            "feedback"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "identifier": "a1_review_0",
+      "title": "Validate verdict + retry bound",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "https://jclaw-bridge.example.invalid/review",
+        "method": "POST",
+        "synchronized": true,
+        "onFailure": "terminate",
+        "headers": {
+          "Authorization": "Bearer {{ .secrets[\"JCLAW_PORT_ACTION_TOKEN\"] }}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "request": "{{ .outputs.a1_context.response.data }}",
+          "plan": "{{ .outputs.a1_draft.response | fromjson }}",
+          "critique": "{{ try (.outputs.a1_judge_0.response | fromjson) catch null }}",
+          "refinements": 0,
+          "workflowRunId": "{{ .workflowRun.identifier }}"
+        }
+      }
+    },
+    {
+      "identifier": "a1_route_0",
+      "title": "Approved / refine / blocked",
+      "config": {
+        "type": "CONDITION",
+        "outlets": [
+          {
+            "identifier": "approve",
+            "title": "Reviewed proposal",
+            "expression": ".outputs.a1_review_0.response.data.route == \"APPROVE\"",
+            "statusLabel": {
+              "text": "\"Reviewed proposal\"",
+              "variant": "success"
+            }
+          },
+          {
+            "identifier": "refine",
+            "title": "Refine candidate",
+            "expression": ".outputs.a1_review_0.response.data.route == \"REFINE\"",
+            "statusLabel": {
+              "text": "\"Refine candidate\"",
+              "variant": "alert"
+            }
+          },
+          {
+            "identifier": "block",
+            "title": "Blocked — no delivery",
+            "expression": ".outputs.a1_review_0.response.data.route == \"BLOCK\"",
+            "statusLabel": {
+              "text": "\"Blocked \\u2014 no delivery\"",
+              "variant": "alert"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "identifier": "a1_refine_1",
+      "title": "Refine 1 of 2",
+      "config": {
+        "type": "AI",
+        "systemPrompt": "You are j-claw. Use only supplied facts and return the requested typed result. Never take an external action.",
+        "userPrompt": "Revise the plan using the judge feedback. Honor the same current request, userInstruction and avoided flavors. Return the complete typed plan; no external actions. Set fakeCalendarEventId=null.\nRequest: {{ .outputs.a1_context.response.data }}\nPrevious plan: {{ .outputs.a1_draft.response | fromjson }}\nFeedback: {{ .outputs.a1_review_0.response.data.feedback }}\nUser context: {{ .outputs.user_context.response.data.entity.properties.context }}",
+        "tools": [
+          "^$"
+        ],
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "flavor": {
+              "type": "string",
+              "enum": [
+                "CALENDAR_CONFLICT",
+                "FAMILY_OBLIGATION",
+                "CUSTOMER_ESCALATION",
+                "DEADLINE",
+                "ALREADY_PROFICIENT",
+                "EXISTENTIAL_CRISIS"
+              ]
+            },
+            "fakeCalendarEventId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "messageToOrganizer": {
+              "type": "string"
+            },
+            "hallwayScript": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "flavor",
+            "fakeCalendarEventId",
+            "messageToOrganizer",
+            "hallwayScript"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "identifier": "a1_judge_1",
+      "title": "Judge the current candidate (refinement 1)",
+      "config": {
+        "type": "AI",
+        "systemPrompt": "You are j-claw. Use only supplied facts and return the requested typed result. Never take an external action.",
+        "userPrompt": "Load skill jclaw-decline-review. Judge this exact plan against the current request, including latest human constraints and both avoided-flavor lists. An honest first draft may pass. Approve only when this exact candidate is ready for the human to consider sending.\nCurrent request: {{ .outputs.a1_context.response.data }}\nPlan: {{ .outputs.a1_refine_1.response | fromjson }}\nUser context: {{ .outputs.user_context.response.data.entity.properties.context }}",
+        "tools": [
+          "load_skill"
+        ],
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "tier": {
+              "type": "string",
+              "enum": [
+                "AIRTIGHT",
+                "CREDIBLE",
+                "THIN",
+                "HR_WILL_NOTICE"
+              ]
+            },
+            "approved": {
+              "type": "boolean"
+            },
+            "feedback": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "tier",
+            "approved",
+            "feedback"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "identifier": "a1_review_1",
+      "title": "Validate verdict + retry bound",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "https://jclaw-bridge.example.invalid/review",
+        "method": "POST",
+        "synchronized": true,
+        "onFailure": "terminate",
+        "headers": {
+          "Authorization": "Bearer {{ .secrets[\"JCLAW_PORT_ACTION_TOKEN\"] }}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "request": "{{ .outputs.a1_context.response.data }}",
+          "plan": "{{ .outputs.a1_refine_1.response | fromjson }}",
+          "critique": "{{ try (.outputs.a1_judge_1.response | fromjson) catch null }}",
+          "refinements": 1,
+          "workflowRunId": "{{ .workflowRun.identifier }}"
+        }
+      }
+    },
+    {
+      "identifier": "a1_route_1",
+      "title": "Approved / refine / blocked",
+      "config": {
+        "type": "CONDITION",
+        "outlets": [
+          {
+            "identifier": "approve",
+            "title": "Reviewed proposal",
+            "expression": ".outputs.a1_review_1.response.data.route == \"APPROVE\"",
+            "statusLabel": {
+              "text": "\"Reviewed proposal\"",
+              "variant": "success"
+            }
+          },
+          {
+            "identifier": "refine",
+            "title": "Refine candidate",
+            "expression": ".outputs.a1_review_1.response.data.route == \"REFINE\"",
+            "statusLabel": {
+              "text": "\"Refine candidate\"",
+              "variant": "alert"
+            }
+          },
+          {
+            "identifier": "block",
+            "title": "Blocked — no delivery",
+            "expression": ".outputs.a1_review_1.response.data.route == \"BLOCK\"",
+            "statusLabel": {
+              "text": "\"Blocked \\u2014 no delivery\"",
+              "variant": "alert"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "identifier": "a1_refine_2",
+      "title": "Refine 2 of 2",
+      "config": {
+        "type": "AI",
+        "systemPrompt": "You are j-claw. Use only supplied facts and return the requested typed result. Never take an external action.",
+        "userPrompt": "Revise the plan using the judge feedback. Honor the same current request, userInstruction and avoided flavors. Return the complete typed plan; no external actions. Set fakeCalendarEventId=null.\nRequest: {{ .outputs.a1_context.response.data }}\nPrevious plan: {{ .outputs.a1_refine_1.response | fromjson }}\nFeedback: {{ .outputs.a1_review_1.response.data.feedback }}\nUser context: {{ .outputs.user_context.response.data.entity.properties.context }}",
+        "tools": [
+          "^$"
+        ],
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "flavor": {
+              "type": "string",
+              "enum": [
+                "CALENDAR_CONFLICT",
+                "FAMILY_OBLIGATION",
+                "CUSTOMER_ESCALATION",
+                "DEADLINE",
+                "ALREADY_PROFICIENT",
+                "EXISTENTIAL_CRISIS"
+              ]
+            },
+            "fakeCalendarEventId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "messageToOrganizer": {
+              "type": "string"
+            },
+            "hallwayScript": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "flavor",
+            "fakeCalendarEventId",
+            "messageToOrganizer",
+            "hallwayScript"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "identifier": "a1_judge_2",
+      "title": "Judge the current candidate (refinement 2)",
+      "config": {
+        "type": "AI",
+        "systemPrompt": "You are j-claw. Use only supplied facts and return the requested typed result. Never take an external action.",
+        "userPrompt": "Load skill jclaw-decline-review. Judge this exact plan against the current request, including latest human constraints and both avoided-flavor lists. An honest first draft may pass. Approve only when this exact candidate is ready for the human to consider sending.\nCurrent request: {{ .outputs.a1_context.response.data }}\nPlan: {{ .outputs.a1_refine_2.response | fromjson }}\nUser context: {{ .outputs.user_context.response.data.entity.properties.context }}",
+        "tools": [
+          "load_skill"
+        ],
+        "outputSchema": {
+          "type": "object",
+          "properties": {
+            "tier": {
+              "type": "string",
+              "enum": [
+                "AIRTIGHT",
+                "CREDIBLE",
+                "THIN",
+                "HR_WILL_NOTICE"
+              ]
+            },
+            "approved": {
+              "type": "boolean"
+            },
+            "feedback": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "tier",
+            "approved",
+            "feedback"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "identifier": "a1_review_2",
+      "title": "Validate verdict + retry bound",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "https://jclaw-bridge.example.invalid/review",
+        "method": "POST",
+        "synchronized": true,
+        "onFailure": "terminate",
+        "headers": {
+          "Authorization": "Bearer {{ .secrets[\"JCLAW_PORT_ACTION_TOKEN\"] }}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "request": "{{ .outputs.a1_context.response.data }}",
+          "plan": "{{ .outputs.a1_refine_2.response | fromjson }}",
+          "critique": "{{ try (.outputs.a1_judge_2.response | fromjson) catch null }}",
+          "refinements": 2,
+          "workflowRunId": "{{ .workflowRun.identifier }}"
+        }
+      }
+    },
+    {
+      "identifier": "a1_route_2",
+      "title": "Approved / refine / blocked",
+      "config": {
+        "type": "CONDITION",
+        "outlets": [
+          {
+            "identifier": "approve",
+            "title": "Reviewed proposal",
+            "expression": ".outputs.a1_review_2.response.data.route == \"APPROVE\"",
+            "statusLabel": {
+              "text": "\"Reviewed proposal\"",
+              "variant": "success"
+            }
+          },
+          {
+            "identifier": "refine",
+            "title": "Refine candidate",
+            "expression": ".outputs.a1_review_2.response.data.route == \"REFINE\"",
+            "statusLabel": {
+              "text": "\"Refine candidate\"",
+              "variant": "alert"
+            }
+          },
+          {
+            "identifier": "block",
+            "title": "Blocked — no delivery",
+            "expression": ".outputs.a1_review_2.response.data.route == \"BLOCK\"",
+            "statusLabel": {
+              "text": "\"Blocked \\u2014 no delivery\"",
+              "variant": "alert"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "identifier": "a1_ready",
+      "title": "Bind the reviewed candidate",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "https://jclaw-bridge.example.invalid/review",
+        "method": "POST",
+        "synchronized": true,
+        "onFailure": "terminate",
+        "headers": {
+          "Authorization": "Bearer {{ .secrets[\"JCLAW_PORT_ACTION_TOKEN\"] }}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "request": "{{ .outputs.a1_context.response.data }}",
+          "plan": "{{ ([.outputs.a1_review_0.response.data, .outputs.a1_review_1.response.data, .outputs.a1_review_2.response.data] | map(select(.route == \"APPROVE\")) | if length == 1 then .[0] else error(\"No unique approved candidate\") end) | .prepared.plan }}",
+          "critique": "{{ ([.outputs.a1_review_0.response.data, .outputs.a1_review_1.response.data, .outputs.a1_review_2.response.data] | map(select(.route == \"APPROVE\")) | if length == 1 then .[0] else error(\"No unique approved candidate\") end) | .prepared.critique }}",
+          "refinements": "{{ ([.outputs.a1_review_0.response.data, .outputs.a1_review_1.response.data, .outputs.a1_review_2.response.data] | map(select(.route == \"APPROVE\")) | if length == 1 then .[0] else error(\"No unique approved candidate\") end) | .prepared.refinements }}",
+          "workflowRunId": "{{ .workflowRun.identifier }}"
+        }
+      }
+    },
+    {
+      "identifier": "a1_human",
+      "title": "Human review — exact candidate",
+      "config": {
+        "type": "INPUT",
+        "description": "Recipient: {{ .outputs.a1_ready.response.data.prepared.send.organizerName }}\nMessage:\n{{ .outputs.a1_ready.response.data.prepared.send.message }}\nHallway script:\n{{ .outputs.a1_ready.response.data.prepared.plan.hallwayScript }}\nCritic: {{ .outputs.a1_ready.response.data.prepared.critique.feedback }}",
+        "responders": {
+          "users": [
+            "approver@example.test"
+          ]
+        },
+        "notifications": [],
+        "userInputs": {
+          "properties": {
+            "feedback": {
+              "type": "string",
+              "title": "What should change?"
+            },
+            "candidateId": {
+              "type": "string",
+              "title": "Approved candidate",
+              "readOnly": true,
+              "default": "{{ .outputs.a1_ready.response.data.prepared.send.candidateId }}"
+            }
+          },
+          "buttons": [
+            {
+              "identifier": "approve",
+              "label": "Send this exact message",
+              "variant": "PRIMARY"
+            },
+            {
+              "identifier": "hold",
+              "label": "Hold — no action",
+              "variant": "SECONDARY"
+            },
+            {
+              "identifier": "try_another",
+              "label": "Hold and start a new request",
+              "variant": "DANGER"
+            }
+          ]
+        },
+        "outlets": [
+          {
+            "identifier": "approve",
+            "title": "Send this exact message",
+            "evaluationMethod": "button",
+            "numOfResponders": 1,
+            "statusLabel": {
+              "text": "\"Send this exact message\"",
+              "variant": "success"
+            }
+          },
+          {
+            "identifier": "hold",
+            "title": "Hold — no action",
+            "evaluationMethod": "button",
+            "numOfResponders": 1,
+            "statusLabel": {
+              "text": "\"Hold \\u2014 no action\"",
+              "variant": "alert"
+            }
+          },
+          {
+            "identifier": "try_another",
+            "title": "Hold and start a new request",
+            "evaluationMethod": "button",
+            "numOfResponders": 1,
+            "statusLabel": {
+              "text": "\"Hold and start a new request\"",
+              "variant": "alert"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "identifier": "a1_deliver",
+      "title": "Send + validate matching mock receipt",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "https://jclaw-bridge.example.invalid/deliver",
+        "method": "POST",
+        "synchronized": true,
+        "onFailure": "terminate",
+        "headers": {
+          "Authorization": "Bearer {{ .secrets[\"JCLAW_PORT_ACTION_TOKEN\"] }}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "reviewToken": "{{ .outputs.a1_ready.response.data.reviewToken }}",
+          "candidateId": "{{ .outputs.a1_human.responses[0].inputs.candidateId }}",
+          "selectedOutlet": "{{ .outputs.a1_human.selectedOutlet.identifier }}",
+          "buttonIdentifier": "{{ .outputs.a1_human.responses[0].buttonIdentifier }}",
+          "submittedBy": "{{ .outputs.a1_human.responses[0].submitterInfo.submittedBy | if type == \"string\" then . else tojson end }}",
+          "workflowRunId": "{{ .workflowRun.identifier }}"
+        }
+      }
+    },
+    {
+      "identifier": "a1_remember",
+      "title": "Write the confirmed sent fact",
+      "config": {
+        "type": "UPSERT_ENTITY",
+        "blueprintIdentifier": "jclaw_sent_fact",
+        "onFailure": "terminate",
+        "mapping": {
+          "identifier": "jclaw-send-{{ .outputs.a1_deliver.response.data.receipt.callId }}",
+          "title": "Confirmed decline — {{ .outputs.a1_deliver.response.data.sentFact.eventId }}",
+          "properties": {
+            "eventId": "{{ .outputs.a1_deliver.response.data.sentFact.eventId }}",
+            "organizerName": "{{ .outputs.a1_deliver.response.data.sentFact.organizerName }}",
+            "flavor": "{{ .outputs.a1_deliver.response.data.sentFact.flavor }}",
+            "message": "{{ .outputs.a1_deliver.response.data.sentFact.message }}",
+            "deliveredAt": "{{ .outputs.a1_deliver.response.data.sentFact.deliveredAt }}",
+            "source": "Native Port workflow",
+            "candidateId": "{{ .outputs.a1_deliver.response.data.receipt.candidateId }}",
+            "callId": "{{ .outputs.a1_deliver.response.data.receipt.callId }}"
+          },
+          "relations": {
+            "event": "{{ .outputs.a1_deliver.response.data.sentFact.eventId }}"
+          }
+        }
+      }
+    },
+    {
+      "identifier": "a1_blocked",
+      "title": "Blocked — no human override",
+      "config": {
+        "type": "CONDITION",
+        "outlets": [
+          {
+            "identifier": "blocked",
+            "expression": "true",
+            "statusLabel": {
+              "text": "\"Blocked. Nothing sent.\"",
+              "variant": "alert"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "identifier": "a1_held",
+      "title": "Held — nothing sent",
+      "config": {
+        "type": "CONDITION",
+        "outlets": [
+          {
+            "identifier": "held",
+            "expression": "true",
+            "statusLabel": {
+              "text": "\"Held. Nothing sent.\"",
+              "variant": "alert"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "identifier": "a1_stop",
+      "title": "No external action",
+      "config": {
+        "type": "WEBHOOK",
+        "url": "https://jclaw-bridge.example.invalid/health",
+        "method": "GET",
+        "synchronized": true,
+        "onFailure": "terminate"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "sourceIdentifier": "trigger",
+      "targetIdentifier": "sent_history"
+    },
+    {
+      "sourceIdentifier": "sent_history",
+      "targetIdentifier": "user_context"
+    },
+    {
+      "sourceIdentifier": "user_context",
+      "targetIdentifier": "a0_identify"
+    },
+    {
+      "sourceIdentifier": "a0_identify",
+      "targetIdentifier": "a0_context"
+    },
+    {
+      "sourceIdentifier": "a0_context",
+      "targetIdentifier": "a0_draft"
+    },
+    {
+      "sourceIdentifier": "a0_draft",
+      "targetIdentifier": "a0_judge_0"
+    },
+    {
+      "sourceIdentifier": "a0_judge_0",
+      "targetIdentifier": "a0_review_0"
+    },
+    {
+      "sourceIdentifier": "a0_review_0",
+      "targetIdentifier": "a0_route_0"
+    },
+    {
+      "sourceIdentifier": "a0_route_0",
+      "targetIdentifier": "a0_ready",
+      "sourceOutletIdentifier": "approve"
+    },
+    {
+      "sourceIdentifier": "a0_route_0",
+      "targetIdentifier": "a0_blocked",
+      "sourceOutletIdentifier": "block"
+    },
+    {
+      "sourceIdentifier": "a0_route_0",
+      "targetIdentifier": "a0_refine_1",
+      "sourceOutletIdentifier": "refine"
+    },
+    {
+      "sourceIdentifier": "a0_refine_1",
+      "targetIdentifier": "a0_judge_1"
+    },
+    {
+      "sourceIdentifier": "a0_judge_1",
+      "targetIdentifier": "a0_review_1"
+    },
+    {
+      "sourceIdentifier": "a0_review_1",
+      "targetIdentifier": "a0_route_1"
+    },
+    {
+      "sourceIdentifier": "a0_route_1",
+      "targetIdentifier": "a0_ready",
+      "sourceOutletIdentifier": "approve"
+    },
+    {
+      "sourceIdentifier": "a0_route_1",
+      "targetIdentifier": "a0_blocked",
+      "sourceOutletIdentifier": "block"
+    },
+    {
+      "sourceIdentifier": "a0_route_1",
+      "targetIdentifier": "a0_refine_2",
+      "sourceOutletIdentifier": "refine"
+    },
+    {
+      "sourceIdentifier": "a0_refine_2",
+      "targetIdentifier": "a0_judge_2"
+    },
+    {
+      "sourceIdentifier": "a0_judge_2",
+      "targetIdentifier": "a0_review_2"
+    },
+    {
+      "sourceIdentifier": "a0_review_2",
+      "targetIdentifier": "a0_route_2"
+    },
+    {
+      "sourceIdentifier": "a0_route_2",
+      "targetIdentifier": "a0_ready",
+      "sourceOutletIdentifier": "approve"
+    },
+    {
+      "sourceIdentifier": "a0_route_2",
+      "targetIdentifier": "a0_blocked",
+      "sourceOutletIdentifier": "block"
+    },
+    {
+      "sourceIdentifier": "a0_route_2",
+      "targetIdentifier": "a0_blocked",
+      "sourceOutletIdentifier": "refine"
+    },
+    {
+      "sourceIdentifier": "a0_ready",
+      "targetIdentifier": "a0_human"
+    },
+    {
+      "sourceIdentifier": "a0_human",
+      "targetIdentifier": "a0_deliver",
+      "sourceOutletIdentifier": "approve"
+    },
+    {
+      "sourceIdentifier": "a0_deliver",
+      "targetIdentifier": "a0_remember"
+    },
+    {
+      "sourceIdentifier": "a0_blocked",
+      "targetIdentifier": "a0_stop",
+      "sourceOutletIdentifier": "blocked"
+    },
+    {
+      "sourceIdentifier": "a0_held",
+      "targetIdentifier": "a0_stop",
+      "sourceOutletIdentifier": "held"
+    },
+    {
+      "sourceIdentifier": "a0_human",
+      "targetIdentifier": "a0_held",
+      "sourceOutletIdentifier": "hold"
+    },
+    {
+      "sourceIdentifier": "a0_human",
+      "targetIdentifier": "a1_identify",
+      "sourceOutletIdentifier": "try_another"
+    },
+    {
+      "sourceIdentifier": "a1_identify",
+      "targetIdentifier": "a1_context"
+    },
+    {
+      "sourceIdentifier": "a1_context",
+      "targetIdentifier": "a1_draft"
+    },
+    {
+      "sourceIdentifier": "a1_draft",
+      "targetIdentifier": "a1_judge_0"
+    },
+    {
+      "sourceIdentifier": "a1_judge_0",
+      "targetIdentifier": "a1_review_0"
+    },
+    {
+      "sourceIdentifier": "a1_review_0",
+      "targetIdentifier": "a1_route_0"
+    },
+    {
+      "sourceIdentifier": "a1_route_0",
+      "targetIdentifier": "a1_ready",
+      "sourceOutletIdentifier": "approve"
+    },
+    {
+      "sourceIdentifier": "a1_route_0",
+      "targetIdentifier": "a1_blocked",
+      "sourceOutletIdentifier": "block"
+    },
+    {
+      "sourceIdentifier": "a1_route_0",
+      "targetIdentifier": "a1_refine_1",
+      "sourceOutletIdentifier": "refine"
+    },
+    {
+      "sourceIdentifier": "a1_refine_1",
+      "targetIdentifier": "a1_judge_1"
+    },
+    {
+      "sourceIdentifier": "a1_judge_1",
+      "targetIdentifier": "a1_review_1"
+    },
+    {
+      "sourceIdentifier": "a1_review_1",
+      "targetIdentifier": "a1_route_1"
+    },
+    {
+      "sourceIdentifier": "a1_route_1",
+      "targetIdentifier": "a1_ready",
+      "sourceOutletIdentifier": "approve"
+    },
+    {
+      "sourceIdentifier": "a1_route_1",
+      "targetIdentifier": "a1_blocked",
+      "sourceOutletIdentifier": "block"
+    },
+    {
+      "sourceIdentifier": "a1_route_1",
+      "targetIdentifier": "a1_refine_2",
+      "sourceOutletIdentifier": "refine"
+    },
+    {
+      "sourceIdentifier": "a1_refine_2",
+      "targetIdentifier": "a1_judge_2"
+    },
+    {
+      "sourceIdentifier": "a1_judge_2",
+      "targetIdentifier": "a1_review_2"
+    },
+    {
+      "sourceIdentifier": "a1_review_2",
+      "targetIdentifier": "a1_route_2"
+    },
+    {
+      "sourceIdentifier": "a1_route_2",
+      "targetIdentifier": "a1_ready",
+      "sourceOutletIdentifier": "approve"
+    },
+    {
+      "sourceIdentifier": "a1_route_2",
+      "targetIdentifier": "a1_blocked",
+      "sourceOutletIdentifier": "block"
+    },
+    {
+      "sourceIdentifier": "a1_route_2",
+      "targetIdentifier": "a1_blocked",
+      "sourceOutletIdentifier": "refine"
+    },
+    {
+      "sourceIdentifier": "a1_ready",
+      "targetIdentifier": "a1_human"
+    },
+    {
+      "sourceIdentifier": "a1_human",
+      "targetIdentifier": "a1_deliver",
+      "sourceOutletIdentifier": "approve"
+    },
+    {
+      "sourceIdentifier": "a1_deliver",
+      "targetIdentifier": "a1_remember"
+    },
+    {
+      "sourceIdentifier": "a1_blocked",
+      "targetIdentifier": "a1_stop",
+      "sourceOutletIdentifier": "blocked"
+    },
+    {
+      "sourceIdentifier": "a1_held",
+      "targetIdentifier": "a1_stop",
+      "sourceOutletIdentifier": "held"
+    },
+    {
+      "sourceIdentifier": "a1_human",
+      "targetIdentifier": "a1_held",
+      "sourceOutletIdentifier": "hold"
+    },
+    {
+      "sourceIdentifier": "a1_human",
+      "targetIdentifier": "a1_held",
+      "sourceOutletIdentifier": "try_another"
+    }
+  ]
+}

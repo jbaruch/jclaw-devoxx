@@ -10,6 +10,7 @@ Usage: ./jclaw [workflow|guardrails|observability] [tui|plain]
        ./jclaw graph [native]
        ./jclaw preview
        ./jclaw codex
+       ./jclaw port
        ./jclaw --help
 
 workflow       Round 5: reviewed proposal or blocked, with no human send prompt.
@@ -20,6 +21,7 @@ skills         Standalone corporate-speak runner; no delivery.
 graph          Generate pipeline.mmd; add native for the native-helper teaching graph.
 preview        TamboUI layout rehearsal with labelled fixture data; no providers or actions.
 codex          Probe typed Codex output.
+port           Local mock HTTP bridge for the native Port workflow; no provider calls.
 HELP
 }
 
@@ -34,12 +36,12 @@ case "$mode" in
     if [ "$#" -gt 0 ]; then usage >&2; exit 2; fi
     ;;
   tui|plain) surface="$mode"; shift ;;
-  skills|graph|codex|preview) shift ;;
+  skills|graph|codex|preview|port) shift ;;
   *) usage >&2; exit 2 ;;
 esac
 
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
-if [ "$mode" != graph ] && [ "$mode" != preview ] && [ -z "${GOOGLE_API_KEY:-}" ]; then
+if [ "$mode" != graph ] && [ "$mode" != preview ] && [ "$mode" != port ] && [ -z "${GOOGLE_API_KEY:-}" ]; then
   echo "GOOGLE_API_KEY is not set. Put it in .env (see .env.example)." >&2
   exit 1
 fi
@@ -62,6 +64,7 @@ case "$mode" in
   graph) exec app/build/install/app/bin/app-graph "$@" ;;
   preview) exec app/build/install/app/bin/app-preview "$@" ;;
   codex) exec app/build/install/app/bin/app-codex ;;
+  port) exec app/build/install/app/bin/app-port ;;
   *)
     if [ "$surface" = plain ]; then exec app/build/install/app/bin/app; fi
     exec app/build/install/app/bin/app-tui

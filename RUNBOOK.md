@@ -11,6 +11,7 @@ separate rounds. All human rejection and approval belongs to guardrails.
 ./jclaw workflow           # round 5: reviewed proposal or blocked; never asks to send
 ./jclaw guardrails         # round 6: full human approval / rejection sequence
 ./jclaw observability      # round 7: same workflow, round-7 trace metadata
+./jclaw port               # closing: local mock bridge for the native Port workflow
 ```
 
 Append `plain` for stdout. Use `./jclaw --help` for standalone tools.
@@ -88,6 +89,19 @@ issue #31 / PR #32; the relevant updated guidance was reviewed against this buil
 - Continue full-show rehearsal; the native-helper example passes graph tests, and the TamboUI dashboard passed native terminal interaction checks and live guardrails delivery.
 - Derive the seven step branches from the completed app by removing features.
 - Use the refreshed fictional Tuesday October 6 fixture on both sides.
+
+## Port closing
+
+The complete local package and five-minute run are in [port/README.md](port/README.md).
+Generate the review artifacts with `python3 port/setup.py`; this makes no external
+writes. Start the bridge with `./jclaw port` and verify its read-only MCP surface
+with the reference client before setting up the target organization.
+
+After instance access, configure actual model/provider pairs, reviewer identity
+and an HTTPS bridge endpoint. Seed and connect the prepared graph, then rehearse
+approve, hold, one replacement, critic exhaustion and an unsuccessful receipt.
+Disclose the finite replacement bound and API-versus-CLI model transport. Do not
+present the local package as a completed Port run. INPUT notifications are disabled.
 - Rehearse the verified Google/Claude/Codex paths in the terminal; agree exact CLI model versions with Viktor.
 - Exercise the unavailable critic recovery on stage; approval, substantive rejection and the refinement limit have run live.
 - Verify physical projector readability in the TUI; wide/compact terminal layouts, view switching, keyboard/mouse focus, input preservation and resize during approval are checked. Runtime skill reading and a rewrite without sending have run live in the TUI.

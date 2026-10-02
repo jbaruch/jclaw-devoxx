@@ -1,0 +1,145 @@
+[
+  {
+    "identifier": "jclaw_event",
+    "title": "j-claw calendar event",
+    "icon": "Code",
+    "schema": {
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "organizer": {
+          "type": "string"
+        },
+        "declined": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "start",
+        "organizer",
+        "declined"
+      ]
+    },
+    "relations": {},
+    "mirrorProperties": {},
+    "calculationProperties": {},
+    "aggregationProperties": {}
+  },
+  {
+    "identifier": "jclaw_sent_fact",
+    "title": "j-claw confirmed sent fact",
+    "icon": "Code",
+    "schema": {
+      "properties": {
+        "eventId": {
+          "type": "string"
+        },
+        "organizerName": {
+          "type": "string"
+        },
+        "flavor": {
+          "type": "string",
+          "enum": [
+            "CALENDAR_CONFLICT",
+            "FAMILY_OBLIGATION",
+            "CUSTOMER_ESCALATION",
+            "DEADLINE",
+            "ALREADY_PROFICIENT",
+            "EXISTENTIAL_CRISIS"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "format": "markdown"
+        },
+        "deliveredAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source": {
+          "type": "string"
+        },
+        "candidateId": {
+          "type": "string"
+        },
+        "callId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "eventId",
+        "organizerName",
+        "flavor",
+        "message",
+        "deliveredAt",
+        "source"
+      ]
+    },
+    "relations": {
+      "event": {
+        "title": "Calendar event",
+        "target": "jclaw_event",
+        "required": false,
+        "many": false
+      }
+    },
+    "mirrorProperties": {},
+    "calculationProperties": {},
+    "aggregationProperties": {}
+  },
+  {
+    "identifier": "jclaw_profile",
+    "title": "j-claw user context",
+    "icon": "Code",
+    "schema": {
+      "properties": {
+        "context": {
+          "type": "string",
+          "format": "markdown"
+        }
+      },
+      "required": [
+        "context"
+      ]
+    },
+    "relations": {},
+    "mirrorProperties": {},
+    "calculationProperties": {},
+    "aggregationProperties": {}
+  },
+  {
+    "identifier": "skill",
+    "title": "Skill",
+    "icon": "Code",
+    "schema": {
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "instructions": {
+          "type": "string",
+          "format": "markdown"
+        },
+        "location": {
+          "type": "string",
+          "enum": [
+            "global",
+            "project"
+          ],
+          "default": "global"
+        }
+      },
+      "required": [
+        "description",
+        "instructions",
+        "location"
+      ]
+    },
+    "relations": {},
+    "mirrorProperties": {},
+    "calculationProperties": {},
+    "aggregationProperties": {}
+  }
+]

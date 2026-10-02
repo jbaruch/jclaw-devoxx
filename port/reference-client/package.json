@@ -1,0 +1,7 @@
+{
+  "name": "jclaw-port-reference-client",
+  "private": true,
+  "type": "module",
+  "scripts": {"probe": "node probe.mjs"},
+  "dependencies": {"@modelcontextprotocol/sdk": "1.31.0"}
+}

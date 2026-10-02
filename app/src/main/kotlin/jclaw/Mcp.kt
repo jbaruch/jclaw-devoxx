@@ -33,7 +33,11 @@ class Mcp private constructor(
     }
 
     suspend fun sendDecline(ready: JclawResult.ReadyToSend): DeclineReceipt {
-        val expected = sendEnvelope(ready)
+        return sendDecline(sendEnvelope(ready))
+    }
+
+    /** Execute the application-owned envelope already shown at the Port human gate. */
+    internal suspend fun sendDecline(expected: jclaw.domain.DeclineSend): DeclineReceipt {
         val args = mapOf(
             "eventId" to expected.eventId, "organizerName" to expected.organizerName,
             "message" to expected.message, "callId" to expected.callId, "candidateId" to expected.candidateId,

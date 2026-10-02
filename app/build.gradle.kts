@@ -4,6 +4,7 @@ dependencies {
     implementation("ai.koog:agents-features-memory:1.3.0")
     testImplementation("io.kotest:kotest-runner-junit5:6.0.3")
     testImplementation("io.kotest:kotest-assertions-core:6.0.3")
+    testImplementation(libs.ktor.server.test.host)
     implementation(project(":domain"))
     implementation(project(":tui"))
     implementation(libs.koog.agents)
@@ -18,6 +19,10 @@ dependencies {
     implementation(libs.koog.agents.ext)
     implementation(libs.koog.otel)
     implementation(libs.kotlinx.coroutines)
+    implementation(libs.ktor.server.cio)
+    implementation(libs.ktor.server.content.negotiation)
+    implementation(libs.ktor.serialization.json)
+    implementation(libs.sqlite.jdbc)
     // Koog logs through SLF4J. Without a provider its warnings - a failed telemetry
     // export, say - go nowhere. simple-logger prints them to stderr; the TUI files stderr.
     runtimeOnly(libs.slf4j.simple)
@@ -81,6 +86,7 @@ listOf(
     "app-graph" to "jclaw.GraphKt",
     "app-codex" to "jclaw.TypedCodexProbeKt",
     "app-preview" to "jclaw.PreviewKt",
+    "app-port" to "jclaw.PortBridgeKt",
 ).forEach { (scriptName, main) ->
     val t = tasks.register<CreateStartScripts>("startScripts_$scriptName") {
         applicationName = scriptName

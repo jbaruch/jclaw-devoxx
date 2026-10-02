@@ -1,0 +1,11 @@
+{
+  "apiBase": "https://api.port.io/v1",
+  "bridgeUrl": "https://jclaw-bridge.example.invalid",
+  "approverEmail": "approver@example.test",
+  "expectedOrgId": null,
+  "models": {
+    "identify": null,
+    "draft": null,
+    "judge": null
+  }
+}

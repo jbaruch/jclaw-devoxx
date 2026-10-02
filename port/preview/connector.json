@@ -1,0 +1,21 @@
+{
+  "blueprint": "_mcp_server",
+  "entities": [
+    {
+      "identifier": "jclaw-read",
+      "title": "j-claw read-only mocks",
+      "properties": {
+        "url": "https://jclaw-bridge.example.invalid/mcp",
+        "description": "Read-only calendar and organizer from the same JVM mock servers.",
+        "headers": {
+          "Authorization": "Bearer {{ .secrets[\"JCLAW_PORT_READ_TOKEN\"] }}"
+        },
+        "allowed_tools": [
+          "jclaw-read_getCalendar",
+          "jclaw-read_getOrganizerSensitivity"
+        ],
+        "exposed": true
+      }
+    }
+  ]
+}

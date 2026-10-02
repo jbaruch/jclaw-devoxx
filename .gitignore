@@ -21,6 +21,7 @@ Thumbs.db
 # Node (for mock MCP servers if implemented in Node)
 node_modules/
 package-lock.json
+!port/reference-client/package-lock.json
 
 # Python (if any helper scripts)
 __pycache__/
@@ -78,3 +79,6 @@ memory/documents/*
 .kotlin/
 pipeline.mmd
 pipeline-native.mmd
+# Local Port bridge send-attempt ledger (never reset implicitly).
+port-send-attempts.sqlite*
+port/generated/

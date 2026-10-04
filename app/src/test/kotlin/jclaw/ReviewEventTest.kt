@@ -68,7 +68,7 @@ class ReviewEventTest : StringSpec({
     }
     "a new request starts at draft one after the previous request exhausts refinements" {
         val firstRequest = mutableListOf<ReviewEvent>()
-        ReviewAttempt(draft, refinements = 2).review(
+        ReviewAttempt(draft, refinements = 6).review(
             onEvent = { firstRequest += it }, judge = { rejection },
         ).route shouldBe ReviewRoute.BLOCK
         val nextRequest = mutableListOf<ReviewEvent>()

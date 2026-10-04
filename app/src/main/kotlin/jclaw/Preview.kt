@@ -26,9 +26,9 @@ fun main() {
         onSubmit = { input.trySend(it) },
         title = "FIXTURE PREVIEW",
         mode = "SIMULATED / NO ACTIONS",
-        features = listOf("MCP", "MEMORY", "SKILLS", "WORKFLOW", "GUARDRAILS"),
+        features = listOf("MCP", "MEMORY", "SKILLS", "JEV", "WORKFLOW", "GUARDRAILS"),
         providerLegend = "FIXTURE EVENTS ONLY · no provider calls, deliveries or memory writes",
-        flow = listOf("identify", "→", "deploy", "→", "verify", "⇄", "refine", "→", "human", "→", "send", "→", "memory"),
+        flow = listOf("readCalendar", "→", "jevDecision", "→", "assembleRequest", "→", "deploy", "→", "verify", "⇄", "refine", "→", "human", "→", "send", "→", "memory"),
     )
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     scope.launch {
@@ -48,18 +48,26 @@ fun main() {
             approved = false
             tui.resetFlow()
             tui.chat("you: $instruction", ChatKind.YOU)
-            phase("identify", "Gemini") {
+            phase("readCalendar", "Application") {
                 tui.toolCall("getCalendar", "fixture")
-                tui.trace("[fixture memory] previous excuses: appointment, deadline, travel", TraceKind.TOOL_CALL)
+            }
+            phase("jevDecision", "Jev") {
+                tui.decision(listOf("FIXTURE · jev-1.13.0 · 187ms · DECLINE",
+                    "intent: EXCUSE_REQUEST · confidence 0.97 · margin 0.94",
+                    "  EXCUSE_REQUEST 98.0%", "  CHAT 2.0%",
+                    "event: basic-ai-proficiency-2026 · confidence 0.96 · margin 0.92"))
+            }
+            phase("assembleRequest", "Application") {
+                tui.trace("[fixture memory] previous excuses: calendar conflict, family obligation, customer escalation", TraceKind.TOOL_CALL)
             }
             phase("deploy", "Claude Code") {
-                tui.candidate(CandidateView("APPOINTMENT", "Dana from People Ops", "basic-ai-proficiency-2026",
-                    "Hi Dana, I have an appointment during Tuesday's training. Could I catch up later?",
-                    "I have an appointment.", instruction, 1))
+                tui.candidate(CandidateView("CALENDAR_CONFLICT", "Dana from People Ops", "basic-ai-proficiency-2026",
+                    "Hi Dana, I have a conflicting meeting during Tuesday's training. Could I catch up later?",
+                    "I have a conflicting meeting.", instruction, 1))
             }
             phase("verify", "Codex") {
-                tui.reviewResult(false, "Appointment was already used. Find a different basis.")
-                tui.chat("[fixture critic] REJECTED draft 1: appointment is in sent history.", ChatKind.ERR)
+                tui.reviewResult(false, "Calendar conflict was already used. Find a different basis.")
+                tui.chat("[fixture critic] REJECTED draft 1: calendar conflict is in sent history.", ChatKind.ERR)
             }
             phase("refine", "Claude Code") {
                 tui.candidate(CandidateView("ALREADY_PROFICIENT", "Dana from People Ops", "basic-ai-proficiency-2026",

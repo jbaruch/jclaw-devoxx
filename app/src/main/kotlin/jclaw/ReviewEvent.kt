@@ -27,9 +27,10 @@ internal fun ReviewEvent.chatText(): String = when (this) {
 internal suspend fun ReviewAttempt.review(
     onEvent: suspend (ReviewEvent) -> Unit,
     judge: suspend (DeclineDeployment) -> DeclineCritique,
+    maxRefinements: Int = jclaw.domain.WorkflowPolicy.maxRefinements,
 ): ReviewDecision {
     onEvent(ReviewEvent.Draft(this))
     val critique = judge(plan)
     onEvent(ReviewEvent.Verdict(this, critique))
-    return reviewDecision(this, critique)
+    return reviewDecision(this, critique, maxRefinements)
 }

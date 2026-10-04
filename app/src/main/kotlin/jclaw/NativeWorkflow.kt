@@ -20,6 +20,7 @@ import jclaw.domain.DeclineReview
 fun nativeWorkflow(
     draftModel: LLModel,
     reviewModel: LLModel,
+    maxRefinements: Int = jclaw.domain.WorkflowPolicy.maxRefinements,
 ): AIAgentGraphStrategy<DeclineRequest, JclawResult> = strategy("j-claw-native") {
     val currentRequest = createStorageKey<DeclineRequest>("native-request")
     val nextAttempt = createStorageKey<ReviewAttempt>("native-next-attempt")
@@ -58,7 +59,7 @@ fun nativeWorkflow(
         JclawResult.ReadyToSend(verdict.input.plan, requireNotNull(verdict.input.request))
     }
     val blocked by node<CriticResult<ReviewAttempt>, JclawResult> { verdict ->
-        JclawResult.Blocked("Native critic rejected after 2 refinements: ${verdict.feedback}", verdict.input.plan)
+        JclawResult.Blocked("Native critic rejected after $maxRefinements refinements: ${verdict.feedback}", verdict.input.plan)
     }
 
     edge(nodeStart forwardTo begin)
@@ -66,8 +67,8 @@ fun nativeWorkflow(
     edge(draft forwardTo initialReview)
     edge(initialReview forwardTo verify)
     edge(verify forwardTo approved onCondition { it.successful })
-    edge(verify forwardTo prepareRevision onCondition { !it.successful && it.input.refinements < 2 })
-    edge(verify forwardTo blocked onCondition { !it.successful && it.input.refinements >= 2 })
+    edge(verify forwardTo prepareRevision onCondition { !it.successful && it.input.refinements < maxRefinements })
+    edge(verify forwardTo blocked onCondition { !it.successful && it.input.refinements >= maxRefinements })
     edge(prepareRevision forwardTo refine)
     edge(refine forwardTo revisedReview)
     edge(revisedReview forwardTo verify)

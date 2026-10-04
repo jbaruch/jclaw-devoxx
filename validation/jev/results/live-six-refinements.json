@@ -1,0 +1,233 @@
+{
+  "live": true,
+  "date": "2026-10-02",
+  "policy": {
+    "maxRefinements": 6,
+    "maxCandidates": 7
+  },
+  "memorySnapshot": "Three shared committed seed facts copied into separate rehearsal directories; original memory untouched",
+  "humanInputs": "Agent-operated rehearsal feedback and approval; all delivery targets are fictional mocks",
+  "runs": [
+    {
+      "surface": "plain",
+      "traceId": "fc52dc9ecfe284833627700fff2e0a6e",
+      "sessionId": "jclaw-20261002-145206",
+      "nodeCounts": {
+        "node readCalendar": 1,
+        "node jevDecision": 1,
+        "node assembleRequest": 1,
+        "node deploy": 1,
+        "node refine": 3,
+        "node verify": 4,
+        "node humanCritic": 4
+      },
+      "judgeVerdicts": [
+        {
+          "approved": true,
+          "refinements": 0
+        },
+        {
+          "approved": true,
+          "refinements": 1
+        },
+        {
+          "approved": true,
+          "refinements": 2
+        },
+        {
+          "approved": true,
+          "refinements": 3
+        }
+      ],
+      "humanVerdicts": [
+        {
+          "route": "REFINE",
+          "refinements": 0,
+          "feedback": "Make the email shorter and more direct. Keep the proficiency reason; remove the Tuesday-afternoon reference. Put avoided excuses only in my review notes, not in the message to Dana."
+        },
+        {
+          "route": "REFINE",
+          "refinements": 1,
+          "feedback": "Make the request more gracious for a touchy organizer. Replace 'isn't a good use of a seat' with a polite request for an exemption based on my professional experience. Keep it brief, don't mention the afternoon talk, and keep avoided excuses only in my private review notes."
+        },
+        {
+          "route": "REFINE",
+          "refinements": 2,
+          "feedback": "One final revision: explicitly say I will complete any required assessment and will attend if an exemption isn't available. Keep the polite proficiency request, keep the email brief, and don't restore the afternoon-talk reference."
+        },
+        {
+          "route": "APPROVE",
+          "refinements": 3,
+          "feedback": "send"
+        }
+      ],
+      "finalRefinements": 3,
+      "finalRequest": {
+        "eventId": "basic-ai-proficiency-2026",
+        "recentlyUsedFlavors": [
+          "CUSTOMER_ESCALATION",
+          "FAMILY_OBLIGATION",
+          "CALENDAR_CONFLICT"
+        ],
+        "knownAttendees": [
+          "Dana from People Ops",
+          "your skip-level",
+          "the whole platform team"
+        ],
+        "organizerName": "Dana from People Ops",
+        "userInstruction": "Get me out of the Basic AI Proficiency Training on Tuesday, run by Dana from People Ops. Don't reuse an excuse I've already used on her - tell me which ones you're avoiding.\nHuman feedback: Make the email shorter and more direct. Keep the proficiency reason; remove the Tuesday-afternoon reference. Put avoided excuses only in my review notes, not in the message to Dana.\nHuman feedback: Make the request more gracious for a touchy organizer. Replace 'isn't a good use of a seat' with a polite request for an exemption based on my professional experience. Keep it brief, don't mention the afternoon talk, and keep avoided excuses only in my private review notes.\nHuman feedback: One final revision: explicitly say I will complete any required assessment and will attend if an exemption isn't available. Keep the polite proficiency request, keep the email brief, and don't restore the afternoon-talk reference."
+      },
+      "jev": {
+        "model": "jev-1.13.0",
+        "usage": {
+          "input": 1913,
+          "output": 144,
+          "total": 2057
+        },
+        "metadata": {
+          "role": "bounded-decision",
+          "client": "ktor",
+          "path": "DECLINE",
+          "event_id": "basic-ai-proficiency-2026",
+          "call_latency_ms": 328,
+          "event_answer_used": true,
+          "intent.choice": "EXCUSE_REQUEST",
+          "intent.confidence": 1,
+          "intent.margin": 1,
+          "intent.probability.EXCUSE_REQUEST": 1,
+          "intent.probability.CHAT": 0,
+          "event.choice": "basic-ai-proficiency-2026",
+          "event.confidence": 0.97,
+          "event.margin": 0.94,
+          "event.probability.ways-of-working-2026": 0,
+          "event.probability.AMBIGUOUS": 0,
+          "event.probability.compliance-refresher-2026": 0,
+          "event.probability.security-awareness-m4-2026": 0,
+          "event.probability.NO_MATCH": 0.03,
+          "event.probability.basic-ai-proficiency-2026": 0.97
+        }
+      },
+      "delivery": {
+        "delivered": true,
+        "callId": "0a968eec-4bac-4cb0-bba4-1b1a0d349f06",
+        "candidateId": "881e72e6c8ce9a37c7a19a61a3190e7b751b81982a0cab8adda428d1450a8755",
+        "eventId": "basic-ai-proficiency-2026",
+        "organizerName": "Dana from People Ops",
+        "message": "Hi Dana,\n\nThank you for organizing the Basic AI Proficiency Training. Since building AI agents is my day-to-day work, would you be open to exempting me from this session based on my professional experience?\n\nI'll gladly complete any required assessment, and if an exemption isn't available, I'll attend.\n\nThanks so much,\nBaruch"
+      },
+      "confirmedSentFactsWritten": 1,
+      "persistedMessageExactMatch": true
+    },
+    {
+      "surface": "TamboUI",
+      "traceId": "92f9a43b8efd0fee2edf25c64beb6490",
+      "sessionId": "jclaw-20261002-145537",
+      "nodeCounts": {
+        "node readCalendar": 1,
+        "node jevDecision": 1,
+        "node assembleRequest": 1,
+        "node deploy": 1,
+        "node refine": 2,
+        "node verify": 3,
+        "node humanCritic": 2
+      },
+      "judgeVerdicts": [
+        {
+          "approved": false,
+          "refinements": 0
+        },
+        {
+          "approved": true,
+          "refinements": 1
+        },
+        {
+          "approved": true,
+          "refinements": 2
+        }
+      ],
+      "humanVerdicts": [
+        {
+          "route": "REFINE",
+          "refinements": 1,
+          "feedback": "Make the email shorter and more direct. Keep the proficiency reason; remove the Tuesday-afternoon reference. Put avoided excuses only in my private review notes."
+        },
+        {
+          "route": "APPROVE",
+          "refinements": 2,
+          "feedback": "send"
+        }
+      ],
+      "finalRefinements": 2,
+      "finalRequest": {
+        "eventId": "basic-ai-proficiency-2026",
+        "recentlyUsedFlavors": [
+          "CUSTOMER_ESCALATION",
+          "FAMILY_OBLIGATION",
+          "CALENDAR_CONFLICT"
+        ],
+        "knownAttendees": [
+          "Dana from People Ops",
+          "your skip-level",
+          "the whole platform team"
+        ],
+        "organizerName": "Dana from People Ops",
+        "userInstruction": "Get me out of the Basic AI Proficiency Training on Tuesday, run by Dana from People Ops. Don't reuse an excuse I've already used on her - tell me which ones you're avoiding.\nHuman feedback: Make the email shorter and more direct. Keep the proficiency reason; remove the Tuesday-afternoon reference. Put avoided excuses only in my private review notes."
+      },
+      "jev": {
+        "model": "jev-1.13.0",
+        "usage": {
+          "input": 1913,
+          "output": 144,
+          "total": 2057
+        },
+        "metadata": {
+          "role": "bounded-decision",
+          "client": "ktor",
+          "path": "DECLINE",
+          "event_id": "basic-ai-proficiency-2026",
+          "call_latency_ms": 337,
+          "event_answer_used": true,
+          "intent.choice": "EXCUSE_REQUEST",
+          "intent.confidence": 1,
+          "intent.margin": 1,
+          "intent.probability.EXCUSE_REQUEST": 1,
+          "intent.probability.CHAT": 0,
+          "event.choice": "basic-ai-proficiency-2026",
+          "event.confidence": 0.96,
+          "event.margin": 0.9199999999999999,
+          "event.probability.ways-of-working-2026": 0,
+          "event.probability.NO_MATCH": 0.04,
+          "event.probability.compliance-refresher-2026": 0,
+          "event.probability.AMBIGUOUS": 0,
+          "event.probability.security-awareness-m4-2026": 0,
+          "event.probability.basic-ai-proficiency-2026": 0.96
+        }
+      },
+      "delivery": {
+        "delivered": true,
+        "callId": "0caa7170-8410-4985-8cc6-cc0a7ccc0fa7",
+        "candidateId": "6f04b5d66bae261a0cc48b3980d1833206d1d2ac7b3d7ec4f5d64f1d6fd1491f",
+        "eventId": "basic-ai-proficiency-2026",
+        "organizerName": "Dana from People Ops",
+        "message": "Hi Dana,\n\nI'd like to request an exemption from the Basic AI Proficiency Training. Building AI agents is my day-to-day work, and I speak publicly on the topic, so the basics are well covered.\n\nIf there's a compliance step I still need to complete, tell me what you need and I'll take care of it.\n\nThanks,\nBaruch"
+      },
+      "confirmedSentFactsWritten": 1,
+      "persistedMessageExactMatch": true
+    }
+  ],
+  "followUp": {
+    "traceId": "dabed3578fffb0e03aefa6538d7a1765",
+    "request": "Corporate-speak at intensity 4, preserving facts and commitments; do not send",
+    "result": "Jev CHAT; actual skill directory/file reads; Gemini rewrite; document count unchanged at four; no additional organizer send"
+  },
+  "restart": {
+    "surface": "TamboUI",
+    "samePersistentDirectory": true,
+    "request": "What exact message did I last send to Dana from People Ops about Basic AI Proficiency Training? Quote the stored message. Do not send anything.",
+    "result": "New process recalled the newly persisted outbound message; no new send or document",
+    "traceId": "0532174f7dfae63b8f5ca6fd04bb8d07",
+    "rawReplyContainsExactSavedMessage": true,
+    "noNewSentFact": true
+  },
+  "coverageCaption": "Live rehearsal found old Human-outside-trace caption; corrected source and README, rebuilt, and spot-checked restarted UI."
+}

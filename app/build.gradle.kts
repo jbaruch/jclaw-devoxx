@@ -22,6 +22,8 @@ dependencies {
     implementation(libs.ktor.server.cio)
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.serialization.json)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.content.negotiation)
     implementation(libs.sqlite.jdbc)
     // Koog logs through SLF4J. Without a provider its warnings - a failed telemetry
     // export, say - go nowhere. simple-logger prints them to stderr; the TUI files stderr.
@@ -87,6 +89,7 @@ listOf(
     "app-codex" to "jclaw.TypedCodexProbeKt",
     "app-preview" to "jclaw.PreviewKt",
     "app-port" to "jclaw.PortBridgeKt",
+    "app-jev" to "jclaw.JevProbeKt",
 ).forEach { (scriptName, main) ->
     val t = tasks.register<CreateStartScripts>("startScripts_$scriptName") {
         applicationName = scriptName
@@ -102,6 +105,7 @@ tasks.test {
     useJUnitPlatform()
     dependsOn(":mocks:mcpJars")
     systemProperty("jclaw.mocks", rootProject.layout.projectDirectory.dir("mocks/build/libs").asFile.absolutePath)
+    systemProperty("jclaw.validation", rootProject.layout.projectDirectory.dir("validation/jev/results").asFile.absolutePath)
 }
 
 // JavaExec starts in app/; all entry points need the same absolute runtime skill root.

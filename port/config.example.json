@@ -4,8 +4,21 @@
   "approverEmail": "approver@example.test",
   "expectedOrgId": null,
   "models": {
-    "identify": null,
-    "draft": null,
-    "judge": null
+    "identify": {
+      "provider": "port",
+      "model": "claude-sonnet-4-6"
+    },
+    "draft": {
+      "provider": "port",
+      "model": "claude-opus-4-6"
+    },
+    "judge": {
+      "provider": "port",
+      "model": "gpt-5"
+    },
+    "entry": {
+      "provider": "port",
+      "model": "claude-sonnet-4-6"
+    }
   }
 }

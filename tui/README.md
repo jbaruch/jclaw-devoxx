@@ -70,5 +70,14 @@ application conversation and durable memory are separate.
 
 Agent tool counts come from Koog's tool-start events. The canonical calendar lookup
 and application send have separate MCP trace lines. Langfuse configuration is
-shown without asserting backend arrival; human approval, mock send and final
-memory ingestion remain outside the native agent trace.
+shown without asserting backend arrival. Human review is a native graph node;
+application-owned mock send and final memory ingestion remain outside the agent trace.
+
+## Decision-model evidence
+
+`decision(List<String>)` updates the render-thread evidence panel with model,
+measured latency, route, choices, full probabilities, confidence, margin and
+reported usage. Feed actual responses on both frameworks. Use `traceStage` for
+start/end/failure; the shared ribbon abbreviates readCalendar / jevDecision /
+assembleRequest to calendar / Jev / identify. F4 expands the evidence; F3 expands
+the timed trace. The preview marks all these numbers as fixture data.

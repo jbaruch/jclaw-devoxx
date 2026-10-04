@@ -33,7 +33,7 @@ class ReviewGateTest : StringSpec({
         feedback = "This gives Dana the relevant reason clearly.",
     )
 
-    "rejection permits two refinements and then blocks the latest rejected plan" {
+    "rejection permits six refinements and then blocks the latest rejected plan" {
         val initial = reviewDecision(ReviewAttempt(original), rejection)
         initial.route shouldBe ReviewRoute.REFINE
         initial.feedback shouldBe rejection.feedback
@@ -42,7 +42,7 @@ class ReviewGateTest : StringSpec({
         val firstReview = reviewDecision(firstRevision, rejection)
         firstReview.route shouldBe ReviewRoute.REFINE
 
-        val lastRevision = ReviewAttempt(original.copy(messageToOrganizer = "Second revision"), refinements = 2)
+        val lastRevision = ReviewAttempt(original.copy(messageToOrganizer = "Sixth revision"), refinements = 6)
         val lastReview = reviewDecision(lastRevision, rejection)
         lastReview.route shouldBe ReviewRoute.BLOCK
         lastReview.attempt shouldBe lastRevision
@@ -52,7 +52,7 @@ class ReviewGateTest : StringSpec({
     "approval after refinement releases the revised plan including on the final review" {
         reviewDecision(ReviewAttempt(original), rejection).route shouldBe ReviewRoute.REFINE
 
-        listOf(1, 2).forEach { refinements ->
+        (1..6).forEach { refinements ->
             val attempt = ReviewAttempt(revised, refinements)
             val reviewed = reviewDecision(attempt, approval)
             reviewed.route shouldBe ReviewRoute.APPROVE
@@ -61,7 +61,7 @@ class ReviewGateTest : StringSpec({
     }
 
     "a missing verdict blocks immediately at every attempt" {
-        listOf(0, 1, 2).forEach { refinements ->
+        (0..6).forEach { refinements ->
             val attempt = ReviewAttempt(revised, refinements)
             val reviewed = reviewDecision(attempt, null)
             reviewed.route shouldBe ReviewRoute.BLOCK
@@ -70,7 +70,7 @@ class ReviewGateTest : StringSpec({
     }
 
     "one request exhausting its retries does not consume another request's allowance" {
-        val firstRequest = ReviewAttempt(original, refinements = 2)
+        val firstRequest = ReviewAttempt(original, refinements = 6)
         reviewDecision(firstRequest, rejection).route shouldBe ReviewRoute.BLOCK
 
         val secondRequest = ReviewAttempt(revised)
@@ -106,7 +106,7 @@ class ReviewGateTest : StringSpec({
     }
 
     "human confirmation sends exactly the latest approved plan once and in order" {
-        val review = reviewDecision(ReviewAttempt(revised, refinements = 2), approval)
+        val review = reviewDecision(ReviewAttempt(revised, refinements = 6), approval)
         review.route shouldBe ReviewRoute.APPROVE
         val actions = mutableListOf<Pair<String, DeclineDeployment>>()
 

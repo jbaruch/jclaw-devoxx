@@ -56,7 +56,15 @@ internal data class PortPrepared(val request: DeclineRequest, val plan: DeclineD
 
 @Serializable
 internal data class PortReviewOutput(val route: ReviewRoute, val feedback: String,
-    val prepared: PortPrepared? = null, val reviewToken: String? = null)
+    val prepared: PortPrepared? = null, val reviewToken: String? = null, val refinement: PortRefinement? = null)
+
+@Serializable
+internal data class PortRefinement(val request: DeclineRequest, val plan: DeclineDeployment, val feedback: String)
+
+@Serializable
+internal data class PortHumanReviewInput(val reviewToken: String, val candidateId: String,
+    val selectedOutlet: String, val buttonIdentifier: String, val submittedBy: String,
+    val workflowRunId: String, val feedback: String = "")
 
 @Serializable
 internal data class PortDeliveryInput(val reviewToken: String, val candidateId: String,
@@ -105,20 +113,41 @@ internal class PortBridge(private val mcp: Mcp, private val signingKey: String,
     }
 
     suspend fun review(input: PortReviewInput): PortReviewOutput {
-        require(input.refinements in 0..2) { "Only two refinements are allowed" }
+        require(input.refinements in 0..jclaw.domain.WorkflowPolicy.maxRefinements) { "Shared refinement limit exceeded" }
         require(input.workflowRunId.isNotBlank())
         require(input.plan.messageToOrganizer.isNotBlank() && input.plan.hallwayScript.isNotBlank())
         val canonical = mcp.canonicalRequest(input.request)
         require(canonical == input.request) { "Recipient changed after drafting; review the canonical request again" }
         val critique = try { input.critique?.let { portJson.decodeFromJsonElement<DeclineCritique>(it) } }
             catch (_: Exception) { null }
-        val decision = reviewDecision(ReviewAttempt(input.plan, input.refinements, canonical), critique)
-        if (decision.route != ReviewRoute.APPROVE) return PortReviewOutput(decision.route, decision.feedback)
+        val decision = reviewDecision(ReviewAttempt(input.plan, input.refinements, canonical), critique,
+            source = CriticSource.PORT_JUDGE)
+        if (decision.route != ReviewRoute.APPROVE) return refinementOutput(decision)
         val ready = JclawResult.ReadyToSend(input.plan, canonical)
         val prepared = PortPrepared(canonical, input.plan, requireNotNull(critique), input.refinements,
             sendEnvelope(ready), input.workflowRunId, clock().plusSeconds(7200).epochSecond)
         return PortReviewOutput(decision.route, decision.feedback, prepared, sign(prepared))
     }
+
+    /** Human is critic two: same request, candidate and shared refinement budget. */
+    suspend fun humanReview(input: PortHumanReviewInput): PortReviewOutput {
+        require(input.selectedOutlet == "reject" && input.buttonIdentifier == "reject") { "A native human rejection is required" }
+        require(input.submittedBy.isNotBlank()) { "Port must identify the human responder" }
+        val prepared = verify(input.reviewToken)
+        require(prepared.workflowRunId == input.workflowRunId) { "Review belongs to another workflow run" }
+        require(prepared.send.candidateId == input.candidateId) { "Review belongs to another candidate" }
+        require(mcp.canonicalRequest(prepared.request) == prepared.request) { "The selected event changed; review it again" }
+        val feedback = input.feedback.ifBlank { "Revise this candidate using another approach." }
+        val request = prepared.request.copy(
+            userInstruction = prepared.request.userInstruction + "\nHuman feedback: " + feedback,
+        )
+        return refinementOutput(reviewDecision(ReviewAttempt(prepared.plan, prepared.refinements, request),
+            CriticVerdict(false, feedback, CriticSource.HUMAN)))
+    }
+
+    private fun refinementOutput(decision: ReviewDecision) = PortReviewOutput(decision.route, decision.feedback,
+        refinement = if (decision.route == ReviewRoute.REFINE) PortRefinement(
+            requireNotNull(decision.attempt.request), decision.attempt.plan, decision.feedback) else null)
 
     /** Port is trusted to attest its native INPUT response; models never possess the action credential. */
     suspend fun deliver(input: PortDeliveryInput): PortDeliveryOutput = mutex.withLock {
@@ -165,7 +194,10 @@ internal fun Application.portRoutes(bridge: PortBridge, readToken: String, actio
     require(readToken.length >= 32 && actionToken.length >= 32 && readToken != actionToken)
     install(ContentNegotiation) { json(portJson) }
     routing {
-        get("/health") { call.respond(buildJsonObject { put("mode", "MOCK ONLY"); put("status", "ready") }) }
+        get("/health") { call.respond(buildJsonObject {
+            put("mode", "MOCK ONLY"); put("status", "ready")
+            put("maxRefinements", jclaw.domain.WorkflowPolicy.maxRefinements)
+        }) }
         post("/mcp") {
             if (call.request.headers["Authorization"] != "Bearer $readToken") {
                 call.respond(HttpStatusCode.Unauthorized); return@post
@@ -213,6 +245,12 @@ internal fun Application.portRoutes(bridge: PortBridge, readToken: String, actio
             try { call.respond(bridge.review(call.receive())) }
             catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Exception) { call.respond(HttpStatusCode.UnprocessableEntity, mapOf("error" to (error.message ?: "Invalid review"))) }
+        }
+        post("/review/human") {
+            if (call.request.headers["Authorization"] != "Bearer $actionToken") { call.respond(HttpStatusCode.Unauthorized); return@post }
+            try { call.respond(bridge.humanReview(call.receive())) }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) { call.respond(HttpStatusCode.UnprocessableEntity, mapOf("error" to (error.message ?: "Invalid human review"))) }
         }
         post("/deliver") {
             if (call.request.headers["Authorization"] != "Bearer $actionToken") { call.respond(HttpStatusCode.Unauthorized); return@post }

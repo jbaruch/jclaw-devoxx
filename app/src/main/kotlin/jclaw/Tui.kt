@@ -48,13 +48,15 @@ fun main(args: Array<String>) {
     val apiKey = requireNotNull(System.getenv("GOOGLE_API_KEY")) { "GOOGLE_API_KEY is not set" }
     val naive = System.getenv("JCLAW_NAIVE") == "1"
     val reviewOnly = System.getenv("JCLAW_REVIEW_ONLY") == "1"
+    val jev = JevClient.configured()
 
     val submissions = Channel<String>(Channel.UNLIMITED)
     val tui = JclawTui(
         onSubmit = { submissions.trySend(it) },
-        features = listOfNotNull("MCP", "MEMORY".takeUnless { naive }, "SKILLS", "WORKFLOW",
+        features = listOfNotNull("MCP", "MEMORY".takeUnless { naive }, "SKILLS", "JEV".takeIf { jev != null }, "WORKFLOW",
             "GUARDRAILS".takeUnless { reviewOnly }, "LANGFUSE".takeIf { Observability.enabled }),
-        flow = listOf("classify", "→", "identify", "→", "deploy", "→", "verify", "⇄", "refine") +
+        flow = (if (jev != null) listOf("readCalendar", "→", "jevDecision", "→", "assembleRequest") else listOf("classify", "→", "identify")) +
+            listOf("→", "deploy", "→", "verify", "⇄", "refine") +
             if (reviewOnly) emptyList() else listOf("→", "human", "→", "send", "→", "memory"),
         mode = when {
             reviewOnly -> "KOOG / R5 WORKFLOWS"
@@ -63,17 +65,19 @@ fun main(args: Array<String>) {
         },
         reviewOnly = reviewOnly,
         telemetryEnabled = Observability.enabled,
+        candidateLimit = jclaw.domain.WorkflowPolicy.maxCandidates,
+        providerLegend = "${if (jev != null) jclaw.domain.JevProtocol.model else Models.flash.id} decisions · Gemini chat → Claude Code → Codex CLI | organizer: mock",
     )
 
     // The agent is created inside its scope; closing it must happen from the TUI's shutdown path.
-    var closeAgent: (suspend () -> Unit)? = null
+    var closeAgent: (suspend () -> Unit)? = { jev?.close() }
 
     val agentScope = CoroutineScope(SupervisorJob() + Dispatchers.IO + CoroutineName("jclaw-agent"))
     agentScope.launch {
         try {
             val mcp = Mcp.boot("calendar-mcp", "organizer-mcp", onStderr = { tui.trace(it, TraceKind.TOOL_CALL) })
             // Also clean up if skills, embeddings or agent construction fail during startup.
-            closeAgent = { mcp.close() }
+            closeAgent = { jev?.close(); mcp.close() }
             val skills = AgentSkills.discover(trace = { tui.trace(it, TraceKind.TOOL_CALL) })
             val memory = Memory.open(
                 LLMEmbedder(GoogleLLMClient(apiKey), GoogleModels.Embeddings.GeminiEmbedding001),
@@ -81,7 +85,7 @@ fun main(args: Array<String>) {
             )
 
             tui.trace("mode: " + if (naive) "NAIVE — less context, no memory" else "DOMAIN-MODELLED", TraceKind.SUBGRAPH_START)
-            tui.trace("models: ${Models.flash.id} → Claude subscription → Codex subscription", TraceKind.SUBGRAPH_START)
+            tui.trace("models: ${if (jev != null) jclaw.domain.JevProtocol.model else Models.flash.id} decisions · Gemini chat → Claude subscription → Codex subscription", TraceKind.SUBGRAPH_START)
 
             val conversation = Conversation("${Persona.PROMPT}\n${skills.prompt}")
             val agent = AIAgent(
@@ -93,6 +97,11 @@ fun main(args: Array<String>) {
                     maxAgentIterations = 200,
                 ),
                 strategy = jclawStrategy(mcp, naive, skills,
+                    jev = jev, memory = memory, proposedFlavors = conversation::proposedFlavors,
+                    onDecision = { evidence ->
+                        tui.decision(evidence.lines())
+                        evidence.lines().forEach { tui.trace(it, TraceKind.SUBGRAPH_END) }
+                    },
                     onStage = { stage, model, state ->
                         tui.traceStage(stage, model, when (state) {
                             PipelineStageState.STARTED -> TraceStageState.STARTED
@@ -104,9 +113,19 @@ fun main(args: Array<String>) {
                             PipelineStageState.COMPLETED -> StageState.DONE
                             PipelineStageState.FAILED -> StageState.FAILED
                         })
-                        if (state == PipelineStageState.STARTED) tui.startBusy() else tui.stopBusy()
+                        if (stage != "human" && state == PipelineStageState.STARTED) tui.startBusy() else tui.stopBusy()
+                    },
+                    humanReview = if (reviewOnly) null else { attempt ->
+                        val request = requireNotNull(attempt.request)
+                        val ready = JclawResult.ReadyToSend(attempt.plan, request)
+                        tui.candidateIdentity(sendEnvelope(ready).candidateId)
+                        tui.chat("Codex approved this exact candidate. Human critic: send, hold, or tell me what to change.", ChatKind.OK)
+                        tui.chat("recipient: ${request.organizerName}; event: ${request.eventId}", ChatKind.OK)
+                        tui.outcome(DemoOutcome.HUMAN)
+                        humanReview(submissions.receive().trim())
                     },
                     onReview = { event ->
+                        if (event is ReviewEvent.Draft) conversation.rememberProposal(event.attempt)
                         tui.chat(event.chatText(), ChatKind.JCLAW)
                         when (event) {
                             is ReviewEvent.Draft -> {
@@ -130,7 +149,8 @@ fun main(args: Array<String>) {
                         round = System.getenv("JCLAW_ROUND")?.toIntOrNull() ?: if (reviewOnly) 5 else 6,
                         if (naive) "naive" else "domain-modelled",
                         "critic:codex", "drafter:claude-code",
-                        metadata = mapOf("model" to Models.flash.id, "drafter" to "claude-code", "critic" to "codex"),
+                        metadata = mapOf("model" to Models.flash.id, "decider" to if (jev != null) jclaw.domain.JevProtocol.model else Models.flash.id,
+                            "drafter" to "claude-code", "critic" to "codex"),
                     )
                 }
                 if (!naive) install(LongTermMemory) {
@@ -161,7 +181,7 @@ fun main(args: Array<String>) {
                     onLLMCallCompleted { _ -> tui.stopBusy() }
                 }
             }
-            closeAgent = { agent.close(); Observability.flush(); mcp.close() }
+            closeAgent = { agent.close(); jev?.close(); Observability.flush(); mcp.close() }
 
             tui.chat(
                 Persona.WELCOME,
@@ -195,7 +215,15 @@ fun main(args: Array<String>) {
                         tui.outcome(DemoOutcome.BLOCKED, result.reason)
                         continue
                     }
-                    val ready = result as JclawResult.ReadyToSend
+                    if (result is JclawResult.Held) {
+                        tui.chat("j-claw: held. Nothing was sent.", ChatKind.OK)
+                        tui.outcome(DemoOutcome.HELD, "The human critic stopped this candidate. Nothing was sent.")
+                        continue
+                    }
+                    val ready = when (result) {
+                        is JclawResult.ReadyToSend -> result
+                        is JclawResult.HumanApproved -> result.ready
+                    }
                     val plan = ready.deployment
                     tui.candidateIdentity(sendEnvelope(ready).candidateId)
                     tui.chat("j-claw: ✓ Codex approved — flavor ${plan.flavor}", ChatKind.OK)
@@ -207,36 +235,22 @@ fun main(args: Array<String>) {
                         tui.outcome(DemoOutcome.PROPOSAL, "Round 5 ends here. Human approval and delivery belong to guardrails.")
                         continue
                     }
-                    val delivered = deliverApproved(ready,
-                        confirm = {
-                            tui.chat("Send it? type 'send' to deliver, 'hold' to stop, or tell me what to change.", ChatKind.OK)
-                            tui.outcome(DemoOutcome.HUMAN)
-                            val answer = submissions.receive().trim()
-                            conversation.confirmSend(answer) { next = it }
+                    check(result is JclawResult.HumanApproved) { "Human approval is required" }
+                    deliveryAttempted = true
+                    tui.outcome(DemoOutcome.SENDING, "Sending the exact approved candidate to the organizer mock")
+                    tui.stage("send", StageState.ACTIVE)
+                    sendAndRemember(ready, mcp, memory,
+                        onDelivered = { receipt ->
+                            tui.chat("j-claw: delivered. $receipt", ChatKind.OK)
+                            tui.deliveryConfirmed(receipt.callId)
+                            conversation.assistant("Delivered. Organizer receipt: $receipt")
                         },
-                        send = {
-                            deliveryAttempted = true
-                            tui.outcome(DemoOutcome.SENDING, "Sending the exact approved candidate to the organizer mock")
-                            tui.stage("send", StageState.ACTIVE)
-                            sendAndRemember(ready, mcp, memory,
-                                onDelivered = { receipt ->
-                                    tui.chat("j-claw: delivered. $receipt", ChatKind.OK)
-                                    tui.deliveryConfirmed(receipt.callId)
-                                    conversation.assistant("Delivered. Organizer receipt: $receipt")
-                                },
-                                onMemoryFailure = {
-                                    tui.memoryFailed()
-                                    tui.chat("Delivered, but could not save to memory: ${it.message}", ChatKind.ERR)
-                                },
-                                onMemorySaved = { tui.memorySaved() },
-                            )
+                        onMemoryFailure = {
+                            tui.memoryFailed()
+                            tui.chat("Delivered, but could not save to memory: ${it.message}", ChatKind.ERR)
                         },
+                        onMemorySaved = { tui.memorySaved() },
                     )
-                    if (!delivered) {
-                        tui.chat("j-claw: held. Nothing was sent.", ChatKind.OK)
-                        tui.outcome(DemoOutcome.HELD, "This candidate was held. A requested change goes through fresh review.")
-                        conversation.assistant("Held. Nothing was sent.")
-                    }
                 } catch (c: CancellationException) {
                     tui.finishTraceStages(TraceStageState.CANCELLED)
                     throw c

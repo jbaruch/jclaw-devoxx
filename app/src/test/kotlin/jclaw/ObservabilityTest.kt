@@ -9,6 +9,7 @@ import ai.koog.prompt.executor.llms.all.simpleGoogleAIExecutor
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.assertions.throwables.shouldThrow
 import io.opentelemetry.kotlin.ExperimentalApi
 import io.opentelemetry.kotlin.export.OperationResultCode
 import io.opentelemetry.kotlin.tracing.data.SpanData
@@ -22,11 +23,80 @@ import jclaw.domain.DeclineReview
 import jclaw.domain.ExcuseFlavor
 import jclaw.domain.PlausibilityTier
 import jclaw.domain.Scenario
+import jclaw.domain.JevProtocol
+import ai.koog.prompt.message.Message
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentLinkedQueue
 
 @OptIn(ExperimentalApi::class)
 class ObservabilityTest : StringSpec({
+    "Jev telemetry keeps native nesting and reports real decisions and usage without fictional chat messages" {
+        for (fail in listOf(false, true)) {
+            val fixture = decisionFixture()
+            val spans = ConcurrentLinkedQueue<SpanData>()
+            val exporter = object : SpanExporter {
+                override suspend fun export(telemetry: List<SpanData>): OperationResultCode {
+                    spans.addAll(telemetry.map(::withLangfuseNodeDetails))
+                    return OperationResultCode.Success
+                }
+                override suspend fun forceFlush() = OperationResultCode.Success
+                override suspend fun shutdown() = OperationResultCode.Success
+            }
+            var processor: SpanProcessor? = null
+            val pipeline = jclawStrategy(readTools = emptyList(), naive = true,
+                draft = { error("No draft in this telemetry fixture") },
+                refinePlan = { error("No refinement in this telemetry fixture") },
+                judgePlan = { error("No judge in this telemetry fixture") },
+                decisionStages = object : DecisionStages {
+                    override suspend fun context(input: String, messages: List<Message>) = fixture.context
+                    override suspend fun evaluate(context: DecisionContext): DecisionEvaluation {
+                        if (fail) error("Jev HTTP 503")
+                        return fixture
+                    }
+                    override suspend fun assemble(evaluation: DecisionEvaluation) = RoutedInput.Clarify("Fixture result")
+                },
+            )
+            val agent = AIAgent(promptExecutor = simpleGoogleAIExecutor("unused"), llmModel = Models.flash, strategy = pipeline) {
+                install(OpenTelemetry) {
+                    setVerbose(true)
+                    addLangfuseSpanAdapter()
+                    addSpanProcessor { batchSpanProcessor(exporter).also { processor = it } }
+                }
+            }
+            try {
+                if (fail) shouldThrow<Exception> { agent.run(fixture.context.input) }
+                else agent.run(fixture.context.input) shouldBe JclawResult.ChatReply("Fixture result")
+            } finally {
+                agent.close()
+                processor?.forceFlush()
+            }
+            val jev = spans.single { it.attributes["koog.node.id"] == "jevDecision" }
+            spans.single { it.spanContext.spanId == jev.parent.spanId }.name shouldContain "routeAndIdentify"
+            jev.attributes["gen_ai.provider.name"] shouldBe "typesafe"
+            jev.attributes["gen_ai.operation.name"] shouldBe "decision"
+            jev.attributes["gen_ai.request.model"] shouldBe JevProtocol.model
+            jev.attributes["langfuse.observation.input"] shouldBe fixture.context.payload.toString()
+            jev.attributes.containsKey("gen_ai.input.messages") shouldBe false
+            jev.attributes.containsKey("langfuse.observation.cost_details") shouldBe false
+            if (fail) {
+                jev.status.statusCode.name shouldBe "ERROR"
+                jev.attributes.containsKey("gen_ai.usage.input_tokens") shouldBe false
+                jev.attributes.containsKey("gen_ai.response.model") shouldBe false
+            } else {
+                jev.attributes["gen_ai.response.model"] shouldBe fixture.response.model
+                jev.attributes["gen_ai.usage.input_tokens"] shouldBe fixture.response.usage.getValue("input_tokens").toLong()
+                jev.attributes["gen_ai.usage.output_tokens"] shouldBe fixture.response.usage.getValue("output_tokens").toLong()
+                jev.attributes["langfuse.observation.output"] shouldBe JevProtocol.json.encodeToString(fixture.response)
+                jev.attributes["langfuse.observation.metadata.intent.confidence"] shouldBe fixture.response.answers.getValue("intent").confidence
+                jev.attributes["langfuse.observation.metadata.event_id"] shouldBe fixture.decision.eventId
+                val calendar = spans.single { it.attributes["koog.node.id"] == "readCalendar" }
+                calendar.attributes["langfuse.observation.metadata.client"] shouldBe "application"
+                calendar.attributes.containsKey("gen_ai.request.model") shouldBe false
+            }
+            processor?.shutdown()
+        }
+    }
+
     "native Koog export includes typed decisions and each review attempt without inventing CLI generations" {
         val rawSpans = ConcurrentLinkedQueue<SpanData>()
         val enrichedSpans = ConcurrentLinkedQueue<SpanData>()

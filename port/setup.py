@@ -49,7 +49,7 @@ def apply(api,config,folder):
     assert not config['bridgeUrl'].endswith('.invalid') and '.invalid' not in urllib.parse.urlparse(config['bridgeUrl']).hostname
     assert urllib.parse.urlparse(config['bridgeUrl']).scheme=='https'
     assert config['approverEmail'] and not config['approverEmail'].endswith('.test')
-    assert all(config['models'].values()),'Configure actual provider/model pairs for identify, draft and judge'
+    assert all(config['models'].values()),'Configure actual provider/model pairs for entry, identify, draft and judge'
     read=os.environ['JCLAW_PORT_READ_TOKEN'];action=os.environ['JCLAW_PORT_ACTION_TOKEN']
     assert min(len(read),len(action))>=32 and read!=action
     # Check the bridge before any Port writes. Secrets remain in request headers/body, never output.
@@ -70,7 +70,8 @@ def apply(api,config,folder):
         found=api.request('GET','/organization/secrets/'+secret,allow_missing=True)
         if not found:api.request('POST','/organization/secrets',{'secretName':secret,'secretValue':value})
         else:print('Existing secret retained:',secret,'— verify it matches this bridge locally')
-    for bundle in json.loads((folder/'entities.json').read_text())+[json.loads((folder/'connector.json').read_text())]:
+    # Register the connector before the Identify agent's relation references it.
+    for bundle in [json.loads((folder/'connector.json').read_text())]+json.loads((folder/'entities.json').read_text()):
         identifier=bundle['blueprint']
         api.request('POST','/blueprints/'+identifier+'/entities/bulk?upsert=true&merge=true',{'entities':bundle['entities']})
         print('Entities seeded:',identifier,len(bundle['entities']))

@@ -12,12 +12,22 @@ import ai.koog.prompt.message.RequestMetaInfo
 import ai.koog.prompt.message.ResponseMetaInfo
 import ai.koog.utils.time.KoogClock
 import java.util.UUID
+import jclaw.domain.ExcuseFlavor
 
 /** One process-local conversation. LongTermMemory separately persists successful sends. */
 internal class Conversation(val systemPrompt: String) {
     val id: String = UUID.randomUUID().toString()
     private val history = InMemoryChatHistoryProvider()
     private val window = ConversationWindow(systemPrompt)
+    private var proposals = emptyMap<String, List<ExcuseFlavor>>()
+
+    /** Proposed candidates are conversation state, distinct from confirmed disk history. */
+    fun rememberProposal(attempt: ReviewAttempt) {
+        val eventId = attempt.request?.eventId ?: return
+        proposals = proposals + (eventId to (proposals[eventId].orEmpty() + attempt.plan.flavor).distinct())
+    }
+
+    fun proposedFlavors(eventId: String): List<ExcuseFlavor> = proposals[eventId].orEmpty()
 
     fun configure(config: ChatMemoryConfig) {
         config.chatHistoryProvider = history

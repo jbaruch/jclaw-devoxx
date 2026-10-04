@@ -8,20 +8,35 @@
     "sentSeedRecords": 3
   },
   "models": {
-    "identify": null,
-    "draft": null,
-    "judge": null
+    "identify": {
+      "provider": "port",
+      "model": "claude-sonnet-4-6"
+    },
+    "draft": {
+      "provider": "port",
+      "model": "claude-opus-4-6"
+    },
+    "judge": {
+      "provider": "port",
+      "model": "gpt-5"
+    },
+    "entry": {
+      "provider": "port",
+      "model": "claude-sonnet-4-6"
+    }
   },
   "modelNote": "null means Port organization default; discover and configure actual provider/model IDs before rehearsal. APIs differ from the JVM subscription CLIs.",
-  "humanRetryNote": "One replacement is explicitly expanded; a further rejection stops for a new request.",
+  "humanRetryNote": "Both critics share six refinements total. Each refinement returns through Judge and Human; exhaustion blocks.",
   "graphValidation": {
-    "nodes": 45,
-    "connections": 57,
+    "nodes": 71,
+    "connections": 98,
     "checks": "PASS"
   },
   "sources": {
     "mocks/src/main/kotlin/jclaw/mocks/Store.kt": "90948cc2d97d67260e70ea2ff8d6057ac57758a16b2b9dd03490d22f4a6dc5cd",
     "domain/src/main/kotlin/jclaw/domain/Scenario.kt": "d6a7c3619f64142ab8a4e5d82e3bdd2d2ced82f61ffc19eb8cf90c10ef98c3b1",
-    "skills/corporate-speak/SKILL.md": "e3b80c4e1af1a7047b964cc1de8a9a59e1ff95f787a79d2af7467a4e429ffc58"
+    "skills/corporate-speak/SKILL.md": "e3b80c4e1af1a7047b964cc1de8a9a59e1ff95f787a79d2af7467a4e429ffc58",
+    "port/skills/jclaw-decline-review/SKILL.md": "7708b160e42ddca1cf34b2b4a8ced313c92a9a88eba6c636d253f279e663815c",
+    "port/prepare.py": "93069f75a6266627956423466f9773f0c3a8f18bfd05b6b76e2efaddf01e5e9c"
   }
 }

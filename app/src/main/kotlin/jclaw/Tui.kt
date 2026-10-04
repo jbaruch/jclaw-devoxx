@@ -33,7 +33,7 @@ import kotlin.io.path.Path
 import kotlin.system.exitProcess
 
 /**
- * Devoxx workflow and guardrails with the TamboUI stage dashboard.
+ * General-purpose assistant with a TamboUI execution dashboard.
  *
  * Same pipeline and JCLAW_NAIVE switch. The difference is
  * that the subtask boundaries and tool calls land in a TRACE pane where they
@@ -55,9 +55,6 @@ fun main(args: Array<String>) {
         onSubmit = { submissions.trySend(it) },
         features = listOfNotNull("MCP", "MEMORY".takeUnless { naive }, "SKILLS", "JEV".takeIf { jev != null }, "WORKFLOW",
             "GUARDRAILS".takeUnless { reviewOnly }, "LANGFUSE".takeIf { Observability.enabled }),
-        flow = (if (jev != null) listOf("readCalendar", "→", "jevDecision", "→", "assembleRequest") else listOf("classify", "→", "identify")) +
-            listOf("→", "deploy", "→", "verify", "⇄", "refine") +
-            if (reviewOnly) emptyList() else listOf("→", "human", "→", "send", "→", "memory"),
         mode = when {
             reviewOnly -> "KOOG / R5 WORKFLOWS"
             System.getenv("JCLAW_ROUND") == "7" -> "KOOG / R7 OBSERVABILITY"
@@ -66,7 +63,7 @@ fun main(args: Array<String>) {
         reviewOnly = reviewOnly,
         telemetryEnabled = Observability.enabled,
         candidateLimit = jclaw.domain.WorkflowPolicy.maxCandidates,
-        providerLegend = "${if (jev != null) jclaw.domain.JevProtocol.model else Models.flash.id} decisions · Gemini chat → Claude Code → Codex CLI | organizer: mock",
+        providerLegend = "${if (jev != null) jclaw.domain.JevProtocol.model else Models.flash.id} routing · Gemini assistant · Claude / Codex workers · mock actions",
     )
 
     // The agent is created inside its scope; closing it must happen from the TUI's shutdown path.
@@ -161,23 +158,16 @@ fun main(args: Array<String>) {
                 }
                 handleEvents {
                     onSubgraphExecutionStarting {
-                        if (it.subgraph.name in setOf("classify", "identify", "chatReply")) {
-                            tui.traceStage(it.subgraph.name, "${Models.flash.id} (API)", TraceStageState.STARTED)
-                        } else {
-                            tui.trace("┌─ ▶ ${it.subgraph.name}", TraceKind.SUBGRAPH_START)
-                        }
-                        tui.stage(it.subgraph.name, StageState.ACTIVE)
+                        tui.traceStage(it.subgraph.name, "Koog subgraph", TraceStageState.STARTED)
                     }
                     onSubgraphExecutionCompleted {
-                        if (it.subgraph.name in setOf("classify", "identify", "chatReply")) {
-                            tui.traceStage(it.subgraph.name, "${Models.flash.id} (API)", TraceStageState.COMPLETED)
-                        } else {
-                            tui.trace("└─ ✓ ${it.subgraph.name}", TraceKind.SUBGRAPH_END)
-                        }
-                        tui.stage(it.subgraph.name, StageState.DONE)
+                        tui.traceStage(it.subgraph.name, "Koog subgraph", TraceStageState.COMPLETED)
                     }
                     onToolCallStarting { tui.toolCall(it.toolName, it.toolArgs.toString()) }
-                    onLLMCallStarting { _ -> tui.startBusy() }
+                    onLLMCallStarting {
+                        tui.trace("LLM ${it.model.id}", TraceKind.LLM)
+                        tui.startBusy()
+                    }
                     onLLMCallCompleted { _ -> tui.stopBusy() }
                 }
             }
@@ -187,7 +177,7 @@ fun main(args: Array<String>) {
                 Persona.WELCOME,
                 ChatKind.OK,
             )
-            tui.outcome(DemoOutcome.READY, "Ask for a plan, inspect the workflow, then decide what may be sent")
+            tui.outcome(DemoOutcome.READY, "Ask a question, check your calendar, recall something or use a skill")
 
             // A program argument, if given, is asked on startup (the smoke tests use it); on
             // stage the sentence is pasted. JclawTui echoes what you type, so only the
@@ -200,11 +190,12 @@ fun main(args: Array<String>) {
                 next = null
                 var deliveryAttempted = false
                 try {
-                    tui.resetFlow()
+                    tui.resetFlow(prompt)
                     val result = conversation.run(agent, prompt)
                     tui.finishTraceStages(TraceStageState.COMPLETED)
                     if (result is JclawResult.ChatReply) {
                         tui.chat("j-claw: ${result.text}", ChatKind.JCLAW)
+                        tui.work(result.text)
                         tui.outcome(DemoOutcome.CHAT, "Assistant reply complete")
                         continue
                     }
@@ -260,7 +251,7 @@ fun main(args: Array<String>) {
                     else tui.outcome(DemoOutcome.BLOCKED, t.message ?: t.javaClass.simpleName)
                     tui.chat(
                         if (deliveryAttempted) deliveryFailure(t)
-                        else "BLOCKED: ${t.message ?: t.javaClass.simpleName}. Nothing was sent.",
+                        else "Request failed: ${t.message ?: t.javaClass.simpleName}.",
                         ChatKind.ERR,
                     )
                     t.printStackTrace()

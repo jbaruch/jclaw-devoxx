@@ -467,3 +467,33 @@ completed run as a labelled prepared example. DEADLINE is now also used for Dana
 do not expect a repeated baseline request to reproduce it or silently erase history.
 Stable hosting, current-bound native Hold, exhaustion selection, failed-receipt
 rehearsal and physical stage timing remain separate work.
+
+## General assistant dashboard and isolated launches (October 4)
+
+The four TamboUI panes are now Conversation, Workspace, Activity and Evidence.
+Ordinary answers and skill rewrites populate Workspace. Candidate review,
+human decisions and receipt fields appear only when the current task produces
+a candidate. A new request clears those fields. The activity ribbon records
+actual stage events and repeated visits, with no configured calendar/decline
+topology. Native subgraphs and API calls retain their actual names/models in
+the timed trace. These changes do not alter the workflow or approval contract.
+
+Three rendered-dashboard regression tests cover generic startup, arbitrary
+repeated stages and replacing a reviewed candidate with an ordinary answer.
+All **69 app tests pass**, and the installed app and mock JARs build successfully.
+Baruch reported terminal paste working in his session; no paste implementation
+change was made. F1 restores prompt focus before terminal paste.
+
+A live session failed with `NoClassDefFoundError: jclaw/Conversation$run$1`:
+its JVM started before a build replaced the installed app JAR. The class was
+present in the new JAR, but the running class loader could no longer load it.
+The launcher now gives each run private copies of the distribution and mock
+JARs, retaining the repository working directory for skills and memory. Normal
+exit removes those copies. A launcher integration check starts two overlapping
+runs and replaces the shared distribution between them; both retain their own
+app/mock versions, arguments and exit codes, then remove their private files.
+Run it with `python3 tools/test-launcher.py`.
+
+This verifies the updated UI and launcher. The earlier complete provider-run
+evidence remains the reference for the workflow. Baruch's review of the current
+complete demo is still in progress; step branches have not been prepared.

@@ -35,14 +35,13 @@ class JclawTui(
     private val onSubmit: (String) -> Unit,
     private val title: String = "j-claw",
     private val features: List<String> = emptyList(),
-    private val flow: List<String> = emptyList(),
     private val candidateLimit: Int = 7,
     private val mode: String = "KOOG / DEVOXX",
     private val reviewOnly: Boolean = false,
     private val telemetryEnabled: Boolean = false,
-    private val providerLegend: String = "Gemini API  →  Claude Code  →  Codex CLI  |  organizer: mock",
+    private val providerLegend: String = "Personal assistant · tools, memory and reusable skills",
 ) : ToolkitApp() {
-    private val stageStates = HashMap<String, StageState>()
+    private val activity = mutableListOf<ActivityStep>()
     private val chatMessages = mutableListOf<ChatMessage>()
     private val traceLines = mutableListOf<TraceEntry>()
     private val activeTraceStages = mutableMapOf<Pair<String, String>, TraceStopwatch>()
@@ -62,6 +61,8 @@ class JclawTui(
     private var skillReads = 0
     private var savedFacts = 0
     private var candidate: CandidateView? = null
+    private var currentRequest = ""
+    private var currentWork = ""
     private var decisionLines: List<String> = emptyList()
     private var verdict = "Not reviewed"
     private var feedback = ""
@@ -70,7 +71,7 @@ class JclawTui(
     private var receiptId: String? = null
     private var memoryStatus = "No new sent fact"
     private var outcome = DemoOutcome.STARTING
-    private var outcomeDetail = "Connecting mock tools and loading skills"
+    private var outcomeDetail = "Loading the assistant's tools, memory and skills"
 
     // All stateful elements survive render/resize/view changes, including the input.
     private fun logPane(id: String, tail: Boolean = true): ListElement<*> = list()
@@ -124,7 +125,7 @@ class JclawTui(
         } else r.runOnRenderThread(guarded)
     }
 
-    override fun onStart() {
+    public override fun onStart() {
         stopped = false
         startedNanos = System.nanoTime()
         traceTick = 0
@@ -138,16 +139,30 @@ class JclawTui(
         pending.clear()
     }
 
-    fun stage(name: String, state: StageState) = onRenderThread { stageStates[name] = state }
+    fun stage(name: String, state: StageState) = onRenderThread { recordStage(name, state) }
 
-    fun resetFlow() = onRenderThread {
-        stageStates.clear()
+    /** Observed executions, including retries; there is no preconfigured task topology. */
+    private fun recordStage(name: String, state: StageState) {
+        val active = activity.indexOfLast { it.name == name && it.state == StageState.ACTIVE }
+        if (active >= 0) activity[active] = activity[active].copy(state = state)
+        else if (state == StageState.ACTIVE || activity.none { it.name == name }) {
+            activity += ActivityStep(name, state)
+        } else {
+            val last = activity.indexOfLast { it.name == name }
+            activity[last] = activity[last].copy(state = state)
+        }
+    }
+
+    fun resetFlow(request: String = "") = onRenderThread {
+        activity.clear()
         turn++
         turnStartedNanos = System.nanoTime()
         turnFinishedNanos = null
         toolCalls = 0
         skillReads = 0
         candidate = null
+        currentRequest = request
+        currentWork = ""
         decisionLines = emptyList()
         candidateList.selected(0)
         evidenceList.selected(0)
@@ -158,8 +173,11 @@ class JclawTui(
         receiptId = null
         memoryStatus = "No new sent fact"
         outcome = DemoOutcome.RUNNING
-        outcomeDetail = "Identify the request; Claude drafts; Codex reviews"
+        outcomeDetail = "Working on your request"
     }
+
+    /** An answer, rewrite or other task output, independent of the decline workflow. */
+    fun work(content: String) = onRenderThread { currentWork = content }
 
     fun outcome(state: DemoOutcome, detail: String = "") = onRenderThread {
         outcome = state
@@ -167,19 +185,17 @@ class JclawTui(
         if (state in TERMINAL_OUTCOMES) turnFinishedNanos = System.nanoTime()
         if (state == DemoOutcome.HUMAN) {
             human = "Waiting for this exact candidate"
-            stageStates["human"] = StageState.ACTIVE
             tabState.select(0)
             runner()?.focusManager()?.setFocus(PROMPT_ID)
         }
-        if (state == DemoOutcome.HELD) { human = "Held / change requested"; stageStates["human"] = StageState.DONE }
-        if (state == DemoOutcome.SENDING) { human = "Approved exact candidate"; stageStates["human"] = StageState.DONE }
-        if (state == DemoOutcome.BLOCKED) stageStates["verify"] = StageState.FAILED
+        if (state == DemoOutcome.HELD) human = "Held"
+        if (state == DemoOutcome.SENDING) human = "Approved exact candidate"
     }
 
     fun candidate(value: CandidateView) = onRenderThread {
         candidate = value
         candidateList.selected(0)
-        verdict = "Awaiting Codex"
+        verdict = "Awaiting review"
         feedback = ""
         outcome = DemoOutcome.REVIEWING
         outcomeDetail = "Review ${value.attempt}/$candidateLimit · current request and exact proposed message"
@@ -207,7 +223,7 @@ class JclawTui(
         receiptId = id
         delivery = "Validated mock receipt"
         memoryStatus = "Saving confirmed outbound message"
-        stageStates["send"] = StageState.DONE
+        recordStage("send", StageState.DONE)
         outcome = DemoOutcome.DELIVERED
         outcomeDetail = "Exact message and target confirmed by the organizer mock"
         turnFinishedNanos = System.nanoTime()
@@ -217,17 +233,17 @@ class JclawTui(
         savedFacts++
         memoryStatus = "Exact outbound message persisted"
         turnFinishedNanos = System.nanoTime()
-        stageStates["memory"] = StageState.DONE
+        recordStage("memory", StageState.DONE)
     }
 
     fun memoryFailed() = onRenderThread {
         memoryStatus = "Write failed after confirmed delivery"
-        stageStates["memory"] = StageState.FAILED
+        recordStage("memory", StageState.FAILED)
     }
 
     fun deliveryFailed(unconfirmed: Boolean) = onRenderThread {
         delivery = if (unconfirmed) "Unknown; check before retrying" else "Refused by organizer mock"
-        stageStates["send"] = StageState.FAILED
+        recordStage("send", StageState.FAILED)
         outcome = if (unconfirmed) DemoOutcome.UNCONFIRMED else DemoOutcome.BLOCKED
         outcomeDetail = delivery
         turnFinishedNanos = System.nanoTime()
@@ -249,6 +265,11 @@ class JclawTui(
         val eventNanos = System.nanoTime()
         onRenderThread {
             val key = stage to provider
+            recordStage(stage, when (state) {
+                TraceStageState.STARTED -> StageState.ACTIVE
+                TraceStageState.COMPLETED -> StageState.DONE
+                else -> StageState.FAILED
+            })
             if (state == TraceStageState.STARTED) {
                 activeTraceStages.remove(key)?.finish(TraceStageState.CANCELLED, eventNanos)
                 val stopwatch = TraceStopwatch(stage, provider, eventNanos)
@@ -276,7 +297,7 @@ class JclawTui(
     private fun finishTraceStagesOnRenderThread(state: TraceStageState, eventNanos: Long) {
         activeTraceStages.forEach { (key, stopwatch) ->
             stopwatch.finish(state, eventNanos)
-            stageStates[key.first] = if (state == TraceStageState.COMPLETED) StageState.DONE else StageState.FAILED
+            recordStage(key.first, if (state == TraceStageState.COMPLETED) StageState.DONE else StageState.FAILED)
         }
         activeTraceStages.clear()
         stopTraceRefresh()
@@ -308,32 +329,23 @@ class JclawTui(
         if (width >= 105) features.forEachIndexed { i, f -> cells += gap(); cells += badge(f, BADGE_COLORS[i % BADGE_COLORS.size]) }
         return row(*cells.toTypedArray()).constraint(Constraint.length(1))
     }
-    private fun flowRow(width: Int): Element? {
-        if (flow.isEmpty()) return null
+    private fun flowRow(width: Int): Element {
         val cells = mutableListOf<Element>()
-        cells += badge("FLOW", Color.CYAN)
-        for (item in flow) {
+        cells += badge("ACTIVITY", Color.CYAN)
+        val available = (width - 12).coerceAtLeast(15)
+        val visible = activity.asReversed().takeWhileAccumulated(available) { CharWidth.of(it.name) + 6 }.asReversed()
+        if (visible.isEmpty()) cells += row(gap(), text(if (activity.isEmpty()) "No activity yet" else CharWidth.substringByWidth(activity.last().name, available)).fg(Color.CYAN))
+        if (visible.size < activity.size) cells += row(gap(), text("…").fg(Color.CYAN)).constraint(Constraint.length(3))
+        visible.forEachIndexed { index, step ->
             cells += gap()
-            if (item in CONNECTORS) cells += text(item).fg(Color.CYAN).constraint(Constraint.length(CharWidth.of(item)))
-            else {
-                val label = when (item) {
-                    "readCalendar" -> "calendar"
-                    "jevDecision" -> "Jev"
-                    "assembleRequest" -> "identify"
-                    else -> item
-                }
-                val (mark, color) = when (stageStates[item]) {
-                    StageState.ACTIVE -> "●" to Color.YELLOW
-                    StageState.DONE -> "✓" to Color.GREEN
-                    StageState.FAILED -> "✘" to Color.RED
-                    else -> "·" to Color.CYAN
-                }
-                cells += text("$label $mark").fg(color).bold().constraint(Constraint.length(CharWidth.of(label) + 2))
+            if (index > 0) cells += row(text("· ").fg(Color.CYAN)).constraint(Constraint.length(2))
+            val (mark, color) = when (step.state) {
+                StageState.ACTIVE -> "●" to Color.YELLOW
+                StageState.DONE -> "✓" to Color.GREEN
+                StageState.FAILED -> "✘" to Color.RED
+                else -> "·" to Color.CYAN
             }
-        }
-        if (width < 105) {
-            val active = stageStates.filterValues { it == StageState.ACTIVE }.keys.joinToString(" / ").ifBlank { outcome.label }
-            return row(badge("FLOW", Color.CYAN), gap(), text(active).fg(Color.YELLOW).bold()).constraint(Constraint.length(1))
+            cells += row(text("${step.name} $mark").fg(color).bold()).constraint(Constraint.length(CharWidth.of(step.name) + 2))
         }
         return row(*cells.toTypedArray()).constraint(Constraint.length(1))
     }
@@ -352,15 +364,20 @@ class JclawTui(
             decisionLines.forEach { appendLine(it) }
             appendLine()
         }
-        appendLine("Review: $verdict · candidate ${candidate?.attempt ?: 0}/$candidateLimit")
-        appendLine("Human: $human")
-        appendLine("Delivery: $delivery")
-        appendLine("Memory: $memoryStatus · saved this session: $savedFacts")
+        if (candidate != null) {
+            appendLine("Review: $verdict · candidate ${candidate?.attempt}/$candidateLimit")
+            appendLine("Human: $human")
+            appendLine("Delivery: $delivery")
+            appendLine("Memory: $memoryStatus · saved this session: $savedFacts")
+        } else {
+            appendLine("Task: ${outcome.label.lowercase()}")
+            if (savedFacts > 0) appendLine("Confirmed outbound facts saved this session: $savedFacts")
+        }
         receiptId?.let { appendLine("Receipt: $it") }
         candidate?.candidateId?.let { appendLine("Candidate: $it") }
         appendLine("Langfuse: ${if (telemetryEnabled) "enabled; verify backend arrival" else "not configured"}")
         appendLine("Trace coverage: agent/API calls and CLI node handoffs.")
-        append("Human review is a graph node; mock send and final ingestion are outside the agent trace.")
+        if (candidate != null) append("Human review is a graph node; mock send and final ingestion are outside the agent trace.")
     }
     private fun candidateText(): String = candidate?.let {
         buildString {
@@ -370,7 +387,10 @@ class JclawTui(
             if (feedback.isNotBlank()) appendLine("\n**Critic feedback:** $feedback")
             append("\n**Current instruction:** ${it.instruction}")
         }
-    } ?: "The current draft will appear here before critic review.\n\nThe message stays pinned through refinement and human approval."
+    } ?: currentWork.ifBlank {
+        if (currentRequest.isNotBlank()) "**Current request:**\n\n$currentRequest"
+        else "Ask j-claw a question, explore your calendar, recall something or use a skill.\n\nThe current task's output appears here."
+    }
 
     private fun updateChat(width: Int) {
         val lines = chatMessages.flatMap { it.rows(width) }.takeLast(MAX_ROWS)
@@ -392,7 +412,7 @@ class JclawTui(
         evidenceList.elements(*wrap(evidenceText(), width).map { text(it).fg(Color.CYAN) }.toTypedArray())
     }
 
-    override fun render(): Element {
+    public override fun render(): Element {
         val size = runner()?.tuiRunner()?.terminal()?.size()
         val width = size?.width() ?: 120
         val height = size?.height() ?: 40
@@ -405,27 +425,28 @@ class JclawTui(
         updateTrace(((if (wide && selected == 0) rightWidth else width) - 4).coerceAtLeast(20))
         updateEvidence(((if (wide && selected == 0) rightWidth else width) - 4).coerceAtLeast(20))
         fun chatPanel() = panel("CONVERSATION", chatList).rounded().borderColor(borderFor(CHAT_ID)).constraint(Constraint.fill())
-        fun candidatePanel() = panel("${candidate?.flavor ?: "CURRENT CANDIDATE"} / $verdict / F2", candidateList).rounded().borderColor(borderFor(CANDIDATE_ID)).constraint(Constraint.fill())
-        fun tracePanel() = panel("LIVE TRACE / ${toolCalls} agent tool calls", traceList).rounded().borderColor(borderFor(TRACE_ID)).constraint(Constraint.fill())
+        fun candidatePanel() = panel("WORKSPACE / F2", candidateList).rounded().borderColor(borderFor(CANDIDATE_ID)).constraint(Constraint.fill())
+        fun tracePanel() = panel("ACTIVITY / ${toolCalls} agent tool calls", traceList).rounded().borderColor(borderFor(TRACE_ID)).constraint(Constraint.fill())
         fun evidencePanel() = panel("EVIDENCE", evidenceList).rounded().borderColor(borderFor(EVIDENCE_ID)).constraint(Constraint.fill())
         val body: Element = when (selected) {
             1 -> candidatePanel()
             2 -> tracePanel()
             3 -> evidencePanel()
             else -> if (wide) row(
-                column(chatPanel().constraint(Constraint.percentage(40)), candidatePanel().constraint(Constraint.percentage(60)))
+                column(chatPanel().constraint(Constraint.percentage(60)), candidatePanel().constraint(Constraint.percentage(40)))
                     .constraint(Constraint.percentage(58)),
                 column(tracePanel(), evidencePanel().constraint(Constraint.length(if (receiptId != null) 13 else 10)))
                     .constraint(Constraint.percentage(42)),
             ).constraint(Constraint.fill())
             else if (height >= 36) column(chatPanel(), candidatePanel()).constraint(Constraint.fill())
-            else if (candidate != null) candidatePanel() else chatPanel()
+            else chatPanel()
         }
-        val summary = "TURN $turn · ${elapsedSeconds()}s · agent tools $toolCalls · skill reads $skillReads · ${candidate?.let { "review ${it.attempt}/$candidateLimit" } ?: "ready"}"
+        val summary = "TURN $turn · ${elapsedSeconds()}s · agent tools $toolCalls · skill reads $skillReads" +
+            (candidate?.let { " · review ${it.attempt}/$candidateLimit" } ?: "")
         val decisionLine = when (outcome) {
             DemoOutcome.HUMAN -> if (width >= 105) "SEND = approve exact message   HOLD = no delivery   Or type a change for a fresh review"
                 else "send: approve this message · hold: stop · or type a change"
-            DemoOutcome.BLOCKED -> "No send override. $outcomeDetail"
+            DemoOutcome.BLOCKED -> (if (candidate != null) "No send override. " else "") + outcomeDetail
             else -> outcomeDetail
         }
         val status = panel(outcome.label,
@@ -437,15 +458,15 @@ class JclawTui(
             else row(text(providerLegend).fg(Color.MAGENTA))
         return column(
             header(width),
-            *listOfNotNull(flowRow(width)).toTypedArray(),
+            flowRow(width),
             status,
             row(viewTabs).constraint(Constraint.length(1)),
             body,
             busyLine.constraint(Constraint.length(1)),
             panel(if (outcome == DemoOutcome.HUMAN) "HUMAN DECISION" else "PROMPT", promptElement)
                 .rounded().borderColor(borderFor(PROMPT_ID)).constraint(Constraint.length(3)),
-            row(text(if (width >= 105) "TamboUI · F1 live · F2 candidate · F3 trace · F4 evidence · Tab focus · PgUp/PgDn scroll · Ctrl+C quit"
-                else "TamboUI · F1 live · F2 message · F3 trace · F4 evidence · Tab focus · Ctrl+C quit").fg(Color.CYAN))
+            row(text(if (width >= 105) "TamboUI · F1 assistant · F2 workspace · F3 activity · F4 evidence · Tab focus · PgUp/PgDn scroll · Ctrl+C quit"
+                else "TamboUI · F1 assistant · F2 workspace · F3 activity · F4 evidence · Tab focus · Ctrl+C quit").fg(Color.CYAN))
                 .constraint(Constraint.length(1)),
         ).bg(Color.BLACK).fg(Color.WHITE).onKeyEvent { event ->
             val index = when (event.code()) { KeyCode.F1 -> 0; KeyCode.F2 -> 1; KeyCode.F3 -> 2; KeyCode.F4 -> 3; else -> -1 }
@@ -469,6 +490,12 @@ class JclawTui(
             return cached
         }
     }
+    private data class ActivityStep(val name: String, val state: StageState)
+
+    private fun <T> List<T>.takeWhileAccumulated(limit: Int, width: (T) -> Int): List<T> {
+        var used = 0
+        return takeWhile { value -> (used + width(value) <= limit).also { if (it) used += width(value) } }
+    }
     companion object {
         private const val MAX_MESSAGES = 150
         private const val MAX_TRACE = 1000
@@ -478,9 +505,8 @@ class JclawTui(
         private const val CANDIDATE_ID = "candidate-list"
         private const val EVIDENCE_ID = "evidence-list"
         private const val PROMPT_ID = "jclaw-prompt"
-        private val VIEW_NAMES = arrayOf("F1 LIVE", "F2 CANDIDATE", "F3 TRACE", "F4 EVIDENCE")
+        private val VIEW_NAMES = arrayOf("F1 ASSISTANT", "F2 WORKSPACE", "F3 ACTIVITY", "F4 EVIDENCE")
         private val BADGE_COLORS = listOf(Color.CYAN, Color.MAGENTA, Color.YELLOW)
-        private val CONNECTORS = setOf("→", "⇄", "↺", "->", "<->")
         private val TERMINAL_OUTCOMES = setOf(DemoOutcome.READY, DemoOutcome.PROPOSAL, DemoOutcome.HELD,
             DemoOutcome.DELIVERED, DemoOutcome.BLOCKED, DemoOutcome.UNCONFIRMED, DemoOutcome.CHAT)
         private val originalOut = System.out

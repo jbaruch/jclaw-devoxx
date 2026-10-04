@@ -28,7 +28,6 @@ fun main() {
         mode = "SIMULATED / NO ACTIONS",
         features = listOf("MCP", "MEMORY", "SKILLS", "JEV", "WORKFLOW", "GUARDRAILS"),
         providerLegend = "FIXTURE EVENTS ONLY · no provider calls, deliveries or memory writes",
-        flow = listOf("readCalendar", "→", "jevDecision", "→", "assembleRequest", "→", "deploy", "→", "verify", "⇄", "refine", "→", "human", "→", "send", "→", "memory"),
     )
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     scope.launch {
@@ -46,7 +45,7 @@ fun main() {
         }
         suspend fun proposal(instruction: String) {
             approved = false
-            tui.resetFlow()
+            tui.resetFlow(instruction)
             tui.chat("you: $instruction", ChatKind.YOU)
             phase("readCalendar", "Application") {
                 tui.toolCall("getCalendar", "fixture")

@@ -62,15 +62,30 @@ if [ -x /usr/libexec/java_home ]; then
 fi
 
 ./gradlew -q :app:installDist :mocks:mcpJars
+
+# Gradle replaces installDist in place. Give this JVM its own files so a later
+# build cannot invalidate classes that it has not loaded yet.
+mkdir -p build/runtime
+runtime_dir="$(mktemp -d "$PWD/build/runtime/run.XXXXXX")"
+trap 'rm -rf -- "$runtime_dir"' EXIT
+cp -R app/build/install/app "$runtime_dir/app"
+mkdir -p "$runtime_dir/mocks"
+cp mocks/build/libs/calendar-mcp.jar mocks/build/libs/organizer-mcp.jar "$runtime_dir/mocks/"
+export JCLAW_MOCKS_ROOT="$runtime_dir/mocks"
+
+# Keep the shell until the child exits so its private files can be cleaned up.
 case "$mode" in
-  skills) exec app/build/install/app/bin/app-skills "$@" ;;
-  graph) exec app/build/install/app/bin/app-graph "$@" ;;
-  preview) exec app/build/install/app/bin/app-preview "$@" ;;
-  codex) exec app/build/install/app/bin/app-codex ;;
-  port) exec app/build/install/app/bin/app-port ;;
-  jev) exec app/build/install/app/bin/app-jev "$@" ;;
+  skills) "$runtime_dir/app/bin/app-skills" "$@" ;;
+  graph) "$runtime_dir/app/bin/app-graph" "$@" ;;
+  preview) "$runtime_dir/app/bin/app-preview" "$@" ;;
+  codex) "$runtime_dir/app/bin/app-codex" ;;
+  port) "$runtime_dir/app/bin/app-port" ;;
+  jev) "$runtime_dir/app/bin/app-jev" "$@" ;;
   *)
-    if [ "$surface" = plain ]; then exec app/build/install/app/bin/app; fi
-    exec app/build/install/app/bin/app-tui
+    if [ "$surface" = plain ]; then
+      "$runtime_dir/app/bin/app"
+    else
+      "$runtime_dir/app/bin/app-tui"
+    fi
     ;;
 esac

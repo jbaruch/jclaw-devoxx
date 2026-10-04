@@ -36,7 +36,7 @@ application {
     applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED", "-Dorg.slf4j.simpleLogger.defaultLogLevel=warn")
 }
 
-/** Three-pane TUI front end over the same pipeline. */
+/** General-purpose TUI front end over the same pipeline. */
 tasks.register<JavaExec>("runTui") {
     group = "application"
     dependsOn(":mocks:mcpJars")

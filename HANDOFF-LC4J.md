@@ -16,8 +16,8 @@ behavior and action boundaries; a translation of Koog's class names is unnecessa
 
 The Koog reference repository is <https://github.com/jbaruch/jclaw-devoxx>.
 This handoff is dated **2026-10-04**. Download the public
-[viktor-demo-handoff.zip](https://github.com/jbaruch/jclaw-devoxx/releases/download/devoxx-be-2026-demo/viktor-demo-handoff.zip)
-and its [SHA-256 checksum](https://github.com/jbaruch/jclaw-devoxx/releases/download/devoxx-be-2026-demo/viktor-demo-handoff.zip.sha256).
+[viktor-demo-handoff.zip](https://github.com/jbaruch/jclaw-devoxx/releases/latest/download/viktor-demo-handoff.zip)
+and its [SHA-256 checksum](https://github.com/jbaruch/jclaw-devoxx/releases/latest/download/viktor-demo-handoff.zip.sha256).
 The source is also available in this repository. The ZIP manifest records the
 exact reference commit and each bundled file's hash. Start with `START-HERE.md`
 after extracting it; no access to Baruch's machine is required.
@@ -30,7 +30,8 @@ application in the bundle. Credentials, runtime memory, Port resources and
 presentation assets are excluded.
 
 **Finish and validate the complete LangChain4j application on `main` first.**
-Then derive seven round branches by removing features from that complete build.
+Wait for Baruch to run and review the complete demo, then derive seven round
+branches by removing features from that complete build.
 Document their commands and capability boundaries. Do not maintain seven diverging
 partial implementations. The Koog step branches are still pending; the completed
 application and this handoff are the behavior reference.
@@ -225,14 +226,22 @@ facts and commitments. Neither rewrite sends or writes history. Verify file read
 cannot escape the skill root through absolute paths, parent traversal or symlinks.
 
 Use [the shared TamboUI module](tui/README.md) for the stage demo. Its class is
-`com.jbaruch.jclaw.tui.JclawTui`; the module has no Koog dependency. Drive candidate,
+`com.jbaruch.jclaw.tui.JclawTui`; the module has no Koog dependency. Keep J-Claw
+a general-purpose assistant: Conversation, Workspace, Activity and Evidence are
+generic panes. Use `work(content)` for ordinary answers/rewrites, and send actual
+stage events to `traceStage`/`stage`. The ribbon records observed execution and
+repeated visits; do not configure a fixed calendar or decline topology. Review and
+delivery fields appear only for the task currently producing a candidate. Drive candidate,
 verdict, human state, timed trace, receipt and memory-write displays from actual
 LangChain4j/application events. Set the mode to LangChain4j and the real
 `providerLegend`. Adjust remaining Koog/Codex or coverage captions to your behavior.
 
-Use the wide dashboard at 120+ columns and 32+ rows. F1–F4 expose live, candidate,
-trace and evidence views. Preserve input across view changes/resize, marshal
+Use the wide dashboard at 120+ columns and 32+ rows. F1–F4 expose Assistant,
+Workspace, Activity and Evidence views. Preserve input across view changes/resize, marshal
 updates to the render thread, and stop child processes/flush traces on exit.
+F1 returns focus to the prompt for terminal paste; Enter submits. Isolate each
+running app's JARs from later builds so a live session cannot lose lazily loaded
+classes when the installed distribution is replaced.
 Provide a plain-text fallback. Label fixture-only UI previews explicitly.
 
 ## Acceptance and completion report

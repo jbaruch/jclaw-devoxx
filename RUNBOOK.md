@@ -16,17 +16,23 @@ separate rounds. All human rejection and approval belongs to guardrails.
 
 Append `plain` for stdout. Use `./jclaw --help` for standalone tools.
 The launcher sources the ignored local .env, builds the installed app and mock
-jars, and keeps memory intact. It never changes branches or clears local data.
+jars, then runs private copies of those files. Later builds cannot replace code
+under the running JVM. The copies are removed on exit; memory and skills remain
+in the repo. It never changes branches or clears local data.
 
 Use the TamboUI dashboard as the main stage view. At 120+ columns and 32+ rows,
-conversation/current candidate sit beside timed trace/evidence. F1 returns to the
-dashboard and prompt; F2 expands the current message, F3 the trace, F4 the evidence.
+Conversation and Workspace sit beside Activity and Evidence. F1 returns to the
+Assistant dashboard and prompt; F2 expands Workspace, F3 Activity, F4 Evidence.
+The ribbon follows actual executions, and Workspace handles any task output.
+Review and delivery details appear when the current task produces a candidate.
 Tab/Shift+Tab or a click changes focus; PgUp/PgDn and the mouse wheel inspect history.
+F1 returns focus to the prompt before terminal paste; Enter submits it.
 Enlarge the terminal font and use the full-screen views for individual teaching beats.
 `./jclaw preview` supplies labelled fixture-only events for layout checks without
 provider calls or actions. It must not be presented as an executed agent run.
 
-Complete the app on `main` before deriving step branches by removing features.
+Baruch must run and review the complete app on `main` before step branches are
+derived by removing features. Do not prepare them before that review.
 Rounds 1–4 then need their own branches before the seven-round run is stage-ready.
 Do not present the combined baseline as those missing checkpoints.
 

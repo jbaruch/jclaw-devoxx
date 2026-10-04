@@ -85,7 +85,7 @@ class Mcp private constructor(
 
         /** Gradle passes this; the start script falls back to the repo layout. */
         private val mocksDir: String =
-            System.getProperty("jclaw.mocks") ?: "mocks/build/libs"
+            System.getProperty("jclaw.mocks") ?: System.getenv("JCLAW_MOCKS_ROOT") ?: "mocks/build/libs"
 
         suspend fun boot(
             vararg servers: String,

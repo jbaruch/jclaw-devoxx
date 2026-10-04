@@ -47,7 +47,7 @@ Corporate-speak accepts intensity 1–11 and defaults to eleven.
 ## Getting started
 
 Viktor's agent can download the
-[public demo handoff ZIP](https://github.com/jbaruch/jclaw-devoxx/releases/download/devoxx-be-2026-demo/viktor-demo-handoff.zip)
+[public demo handoff ZIP](https://github.com/jbaruch/jclaw-devoxx/releases/latest/download/viktor-demo-handoff.zip)
 with built mock MCP jars, shared fixtures, TamboUI and the native LangChain4j Jev
 probe. Read [HANDOFF-LC4J.md](HANDOFF-LC4J.md) for scope and acceptance criteria.
 The bundle assigns only the LangChain4j demo; Baruch owns the presentation and Port.
@@ -90,13 +90,20 @@ CLI input/output/duration coverage differ; CLI cost is not fabricated. Human
 review now runs inside the native graph. Application-owned delivery and the final
 memory write remain outside the native agent trace.
 
-The default stage UI uses TamboUI's wide dashboard with a pinned current candidate,
-timed trace and evidence panel. F1–F4 switch between the live dashboard and full-screen
-candidate, trace and evidence views. Tab or a click changes focus; PgUp/PgDn and the
-mouse wheel inspect history. Narrow terminals keep the current message large.
+The TamboUI dashboard keeps Conversation, Workspace, Activity and Evidence visible.
+Workspace shows the current request and output; review and delivery details appear
+when the task uses that workflow. The activity ribbon follows actual execution events
+without a predefined calendar or drafting path. F1–F4 switch between Assistant and
+full-screen Workspace, Activity and Evidence. Tab or a click changes focus; PgUp/PgDn
+and the mouse wheel inspect history. Narrow terminals keep Conversation visible.
 See [the TamboUI controls](tui/README.md) and use `./jclaw preview` to check the layout.
+Press F1 to return focus to the prompt before pasting with the terminal's paste
+shortcut. Enter submits the prompt. The launcher copies the app and mock JARs to
+a private directory for each run, so rebuilding during a demo cannot replace its
+running code. Those files are removed on exit; memory and skills remain in the repo.
 
-![TamboUI dashboard with clearly labelled fixture data](docs/tamboui-preview.png)
+The [earlier fixture screenshot](docs/tamboui-preview.png) records the previous
+workflow-focused layout; the current assistant panes and controls are described above.
 
 For the Port finale, open [J-Claw Home](https://app.port.io/org_LPlEwoGPsLYRbgGB/organization/home)
 and click the opening-request starter or paste the same request into **Ask j-claw**.
@@ -105,15 +112,15 @@ Home also shows the workflow launch card, its three worker agents with model IDs
 and the two demo skills.
 See [Port setup and rehearsal](port/README.md).
 
-The screenshot is the provider-free UI preview; live run evidence is recorded in
+The earlier screenshot is a provider-free UI preview; live run evidence is recorded in
 [BUILD-NOTES.md](BUILD-NOTES.md).
 
 ## The seven-round build
 
 Finish the complete application on `main` first. Then derive one branch per step
 by removing features from that complete implementation. This keeps fixes and
-shared contracts in one place while the app is being built. No step branches
-are created yet.
+shared contracts in one place while the app is being built. Step branches wait
+until Baruch runs and reviews the complete app; none are created yet.
 
 | Round | Capability | Status |
 |---|---|---|

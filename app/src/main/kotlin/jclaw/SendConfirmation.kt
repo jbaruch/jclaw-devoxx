@@ -1,6 +1,6 @@
 package jclaw
 
-/** Sending needs an exact affirmative. Other substantive replies are the next request. */
+/** Sending needs an exact affirmative. Other substantive replies are human critic feedback. */
 internal sealed interface SendReply {
     data object Send : SendReply
     data object Hold : SendReply
@@ -16,10 +16,13 @@ internal fun sendReply(answer: String): SendReply {
     }
 }
 
-/** A queued follow-up is appended by the next agent run, exactly once. */
-internal suspend fun Conversation.confirmSend(answer: String, queue: (String) -> Unit): Boolean =
-    when (val reply = sendReply(answer)) {
-        SendReply.Send -> { user(answer); true }
-        SendReply.Hold -> { user(answer); false }
-        is SendReply.FollowUp -> { queue(reply.text); false }
-    }
+enum class HumanChoice { APPROVE, REJECT, HOLD }
+
+data class HumanReview(val choice: HumanChoice, val feedback: String)
+
+/** A substantive answer critiques the current candidate; it never becomes a new request. */
+internal fun humanReview(answer: String): HumanReview = when (val reply = sendReply(answer)) {
+    SendReply.Send -> HumanReview(HumanChoice.APPROVE, answer.trim())
+    SendReply.Hold -> HumanReview(HumanChoice.HOLD, answer.trim())
+    is SendReply.FollowUp -> HumanReview(HumanChoice.REJECT, reply.text)
+}

@@ -1,0 +1,6 @@
+{
+  "model": "jev-1.13.0",
+  "intentConfidenceMin": 0.6,
+  "eventConfidenceMin": 0.6,
+  "acceptance": "Every labelled case must take its expected application path. No CHAT, missing-event, ambiguous-event or multiple-target case may launch a decline. No decline may select the wrong event. A live run is required; unavailable service and stub answers cannot pass."
+}

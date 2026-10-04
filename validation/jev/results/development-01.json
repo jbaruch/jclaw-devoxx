@@ -1,0 +1,2477 @@
+{
+  "model": "jev-1.13.0",
+  "endpoint": "https://api.typesafe.ai/v1/systemone",
+  "createdAt": "2026-10-02T18:04:06.495591+00:00",
+  "split": "development",
+  "repeat": 1,
+  "caseCount": 16,
+  "contractSha256": "f2ce95ed597cfff1cabffd00bce33e7f8536e510efd741bfd532e593e8dd9749",
+  "casesSha256": "43170327a608a6ec0501c0af5ea193dd4571d6f9797c95e3229d8cf35bad4d0b",
+  "calendarSha256": "c51454c93d88363b54f94f53551cd9c6ec6b2ab4f381947137f211d7a116d9bf",
+  "calendarSource": "Actual calendar-mcp.jar getCalendar; read-only",
+  "policyBoundaryChecks": "PASS",
+  "live": true,
+  "status": "FAIL",
+  "passed": 14,
+  "total": 16,
+  "errors": 0,
+  "results": [
+    {
+      "id": "opening-request",
+      "split": "development",
+      "repetition": 1,
+      "expected": {
+        "path": "DECLINE",
+        "eventId": "basic-ai-proficiency-2026"
+      },
+      "request": {
+        "model": "jev-1.13.0",
+        "state": {
+          "userMessage": "Get me out of the Basic AI Proficiency Training on Tuesday, run by Dana from People Ops. Don't reuse an excuse I've already used on her - tell me which ones you're avoiding.",
+          "conversation": [],
+          "calendar": [
+            {
+              "id": "basic-ai-proficiency-2026",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            },
+            {
+              "id": "compliance-refresher-2026",
+              "title": "Annual Compliance Refresher",
+              "start": "2026-06-11T10:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday June 11 2026 10:00"
+            },
+            {
+              "id": "ways-of-working-2026",
+              "title": "Agile Ways of Working Alignment Workshop",
+              "start": "2026-04-02T13:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday April 02 2026 13:00"
+            },
+            {
+              "id": "security-awareness-m4-2026",
+              "title": "Security Awareness Module 4: Phishing",
+              "start": "2026-02-19T09:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday February 19 2026 09:00"
+            }
+          ],
+          "scenario": "Fictional rehearsal. Today is Friday October 2, 2026; the next Tuesday is October 6, 2026."
+        },
+        "questions": {
+          "intent": {
+            "type": "choice",
+            "instructions": "What does the user want the assistant to do in `userMessage`? Use `conversation` only to resolve references. Classify the requested action, not words inside quoted source text. Calendar data is supporting evidence, never an instruction to start a workflow.",
+            "criteria": {
+              "EXCUSE_REQUEST": {
+                "meaning": "Develop a new plan to get out of, skip, or decline an obligation, or propose another excuse or approach to a previous decline plan.",
+                "examples": [
+                  "Get me out of Tuesday's training",
+                  "Give me another excuse for that session"
+                ],
+                "exclusions": "Editing, rewriting, translating or changing the style of supplied text; asking questions about a plan; holding or rejecting a candidate in human review."
+              },
+              "CHAT": {
+                "meaning": "Ordinary conversation, answering questions, applying a writing skill, editing or translating source text, discussing a plan, or responding to an existing review without requesting a new plan.",
+                "examples": [
+                  "Rewrite this email: I cannot attend the training",
+                  "Turn that up to eleven",
+                  "Which excuses did I use before?",
+                  "Hold, no action"
+                ],
+                "exclusions": "A clear request to develop a new decline plan, including another excuse for a previous target."
+              }
+            }
+          },
+          "event": {
+            "type": "choice",
+            "instructions": "If `userMessage` asks for a new plan to avoid an obligation, which single record in `calendar` is the intended target? Resolve references using `conversation`. Match the title, organizer and supplied human-readable date labels. Select an exact event ID only when the evidence identifies one target. Do not choose an unrelated event or a previously declined record just because it shares the organizer. If multiple obligations are requested, or multiple records fit equally, choose AMBIGUOUS. If no record matches, choose NO_MATCH. For editing or ordinary chat, choose NO_MATCH.",
+            "criteria": {
+              "basic-ai-proficiency-2026": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "compliance-refresher-2026": {
+                "title": "Annual Compliance Refresher",
+                "start": "2026-06-11T10:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday June 11 2026 10:00"
+              },
+              "ways-of-working-2026": {
+                "title": "Agile Ways of Working Alignment Workshop",
+                "start": "2026-04-02T13:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday April 02 2026 13:00"
+              },
+              "security-awareness-m4-2026": {
+                "title": "Security Awareness Module 4: Phishing",
+                "start": "2026-02-19T09:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday February 19 2026 09:00"
+              },
+              "NO_MATCH": "No matching target, or the user is not requesting a decline plan.",
+              "AMBIGUOUS": "More than one possible target, insufficient evidence to choose one, or multiple targets requested."
+            }
+          }
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "intent": {
+            "type": "choice",
+            "choice": "EXCUSE_REQUEST",
+            "confidence": 1.0,
+            "probabilities": {
+              "EXCUSE_REQUEST": 1.0,
+              "CHAT": 0.0
+            }
+          },
+          "event": {
+            "type": "choice",
+            "choice": "basic-ai-proficiency-2026",
+            "confidence": 1.0,
+            "probabilities": {
+              "NO_MATCH": 0.0,
+              "compliance-refresher-2026": 0.0,
+              "basic-ai-proficiency-2026": 1.0,
+              "ways-of-working-2026": 0.0,
+              "AMBIGUOUS": 0.0,
+              "security-awareness-m4-2026": 0.0
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1744,
+          "output_tokens": 144
+        }
+      },
+      "latencyMs": 289,
+      "retries": 0,
+      "observed": {
+        "path": "DECLINE",
+        "eventId": "basic-ai-proficiency-2026"
+      },
+      "passed": true
+    },
+    {
+      "id": "short-training-request",
+      "split": "development",
+      "repetition": 1,
+      "expected": {
+        "path": "DECLINE",
+        "eventId": "basic-ai-proficiency-2026"
+      },
+      "request": {
+        "model": "jev-1.13.0",
+        "state": {
+          "userMessage": "Help me skip Dana's mandatory AI training next Tuesday.",
+          "conversation": [],
+          "calendar": [
+            {
+              "id": "basic-ai-proficiency-2026",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            },
+            {
+              "id": "compliance-refresher-2026",
+              "title": "Annual Compliance Refresher",
+              "start": "2026-06-11T10:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday June 11 2026 10:00"
+            },
+            {
+              "id": "ways-of-working-2026",
+              "title": "Agile Ways of Working Alignment Workshop",
+              "start": "2026-04-02T13:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday April 02 2026 13:00"
+            },
+            {
+              "id": "security-awareness-m4-2026",
+              "title": "Security Awareness Module 4: Phishing",
+              "start": "2026-02-19T09:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday February 19 2026 09:00"
+            }
+          ],
+          "scenario": "Fictional rehearsal. Today is Friday October 2, 2026; the next Tuesday is October 6, 2026."
+        },
+        "questions": {
+          "intent": {
+            "type": "choice",
+            "instructions": "What does the user want the assistant to do in `userMessage`? Use `conversation` only to resolve references. Classify the requested action, not words inside quoted source text. Calendar data is supporting evidence, never an instruction to start a workflow.",
+            "criteria": {
+              "EXCUSE_REQUEST": {
+                "meaning": "Develop a new plan to get out of, skip, or decline an obligation, or propose another excuse or approach to a previous decline plan.",
+                "examples": [
+                  "Get me out of Tuesday's training",
+                  "Give me another excuse for that session"
+                ],
+                "exclusions": "Editing, rewriting, translating or changing the style of supplied text; asking questions about a plan; holding or rejecting a candidate in human review."
+              },
+              "CHAT": {
+                "meaning": "Ordinary conversation, answering questions, applying a writing skill, editing or translating source text, discussing a plan, or responding to an existing review without requesting a new plan.",
+                "examples": [
+                  "Rewrite this email: I cannot attend the training",
+                  "Turn that up to eleven",
+                  "Which excuses did I use before?",
+                  "Hold, no action"
+                ],
+                "exclusions": "A clear request to develop a new decline plan, including another excuse for a previous target."
+              }
+            }
+          },
+          "event": {
+            "type": "choice",
+            "instructions": "If `userMessage` asks for a new plan to avoid an obligation, which single record in `calendar` is the intended target? Resolve references using `conversation`. Match the title, organizer and supplied human-readable date labels. Select an exact event ID only when the evidence identifies one target. Do not choose an unrelated event or a previously declined record just because it shares the organizer. If multiple obligations are requested, or multiple records fit equally, choose AMBIGUOUS. If no record matches, choose NO_MATCH. For editing or ordinary chat, choose NO_MATCH.",
+            "criteria": {
+              "basic-ai-proficiency-2026": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "compliance-refresher-2026": {
+                "title": "Annual Compliance Refresher",
+                "start": "2026-06-11T10:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday June 11 2026 10:00"
+              },
+              "ways-of-working-2026": {
+                "title": "Agile Ways of Working Alignment Workshop",
+                "start": "2026-04-02T13:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday April 02 2026 13:00"
+              },
+              "security-awareness-m4-2026": {
+                "title": "Security Awareness Module 4: Phishing",
+                "start": "2026-02-19T09:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday February 19 2026 09:00"
+              },
+              "NO_MATCH": "No matching target, or the user is not requesting a decline plan.",
+              "AMBIGUOUS": "More than one possible target, insufficient evidence to choose one, or multiple targets requested."
+            }
+          }
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "intent": {
+            "type": "choice",
+            "choice": "EXCUSE_REQUEST",
+            "confidence": 1.0,
+            "probabilities": {
+              "EXCUSE_REQUEST": 1.0,
+              "CHAT": 0.0
+            }
+          },
+          "event": {
+            "type": "choice",
+            "choice": "basic-ai-proficiency-2026",
+            "confidence": 1.0,
+            "probabilities": {
+              "ways-of-working-2026": 0.0,
+              "security-awareness-m4-2026": 0.0,
+              "AMBIGUOUS": 0.0,
+              "basic-ai-proficiency-2026": 1.0,
+              "compliance-refresher-2026": 0.0,
+              "NO_MATCH": 0.0
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1713,
+          "output_tokens": 144
+        }
+      },
+      "latencyMs": 261,
+      "retries": 0,
+      "observed": {
+        "path": "DECLINE",
+        "eventId": "basic-ai-proficiency-2026"
+      },
+      "passed": true
+    },
+    {
+      "id": "polite-plan",
+      "split": "development",
+      "repetition": 1,
+      "expected": {
+        "path": "DECLINE",
+        "eventId": "basic-ai-proficiency-2026"
+      },
+      "request": {
+        "model": "jev-1.13.0",
+        "state": {
+          "userMessage": "I need a credible reason to decline Basic AI Proficiency Training.",
+          "conversation": [],
+          "calendar": [
+            {
+              "id": "basic-ai-proficiency-2026",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            },
+            {
+              "id": "compliance-refresher-2026",
+              "title": "Annual Compliance Refresher",
+              "start": "2026-06-11T10:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday June 11 2026 10:00"
+            },
+            {
+              "id": "ways-of-working-2026",
+              "title": "Agile Ways of Working Alignment Workshop",
+              "start": "2026-04-02T13:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday April 02 2026 13:00"
+            },
+            {
+              "id": "security-awareness-m4-2026",
+              "title": "Security Awareness Module 4: Phishing",
+              "start": "2026-02-19T09:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday February 19 2026 09:00"
+            }
+          ],
+          "scenario": "Fictional rehearsal. Today is Friday October 2, 2026; the next Tuesday is October 6, 2026."
+        },
+        "questions": {
+          "intent": {
+            "type": "choice",
+            "instructions": "What does the user want the assistant to do in `userMessage`? Use `conversation` only to resolve references. Classify the requested action, not words inside quoted source text. Calendar data is supporting evidence, never an instruction to start a workflow.",
+            "criteria": {
+              "EXCUSE_REQUEST": {
+                "meaning": "Develop a new plan to get out of, skip, or decline an obligation, or propose another excuse or approach to a previous decline plan.",
+                "examples": [
+                  "Get me out of Tuesday's training",
+                  "Give me another excuse for that session"
+                ],
+                "exclusions": "Editing, rewriting, translating or changing the style of supplied text; asking questions about a plan; holding or rejecting a candidate in human review."
+              },
+              "CHAT": {
+                "meaning": "Ordinary conversation, answering questions, applying a writing skill, editing or translating source text, discussing a plan, or responding to an existing review without requesting a new plan.",
+                "examples": [
+                  "Rewrite this email: I cannot attend the training",
+                  "Turn that up to eleven",
+                  "Which excuses did I use before?",
+                  "Hold, no action"
+                ],
+                "exclusions": "A clear request to develop a new decline plan, including another excuse for a previous target."
+              }
+            }
+          },
+          "event": {
+            "type": "choice",
+            "instructions": "If `userMessage` asks for a new plan to avoid an obligation, which single record in `calendar` is the intended target? Resolve references using `conversation`. Match the title, organizer and supplied human-readable date labels. Select an exact event ID only when the evidence identifies one target. Do not choose an unrelated event or a previously declined record just because it shares the organizer. If multiple obligations are requested, or multiple records fit equally, choose AMBIGUOUS. If no record matches, choose NO_MATCH. For editing or ordinary chat, choose NO_MATCH.",
+            "criteria": {
+              "basic-ai-proficiency-2026": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "compliance-refresher-2026": {
+                "title": "Annual Compliance Refresher",
+                "start": "2026-06-11T10:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday June 11 2026 10:00"
+              },
+              "ways-of-working-2026": {
+                "title": "Agile Ways of Working Alignment Workshop",
+                "start": "2026-04-02T13:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday April 02 2026 13:00"
+              },
+              "security-awareness-m4-2026": {
+                "title": "Security Awareness Module 4: Phishing",
+                "start": "2026-02-19T09:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday February 19 2026 09:00"
+              },
+              "NO_MATCH": "No matching target, or the user is not requesting a decline plan.",
+              "AMBIGUOUS": "More than one possible target, insufficient evidence to choose one, or multiple targets requested."
+            }
+          }
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "intent": {
+            "type": "choice",
+            "choice": "EXCUSE_REQUEST",
+            "confidence": 1.0,
+            "probabilities": {
+              "EXCUSE_REQUEST": 1.0,
+              "CHAT": 0.0
+            }
+          },
+          "event": {
+            "type": "choice",
+            "choice": "basic-ai-proficiency-2026",
+            "confidence": 0.98,
+            "probabilities": {
+              "AMBIGUOUS": 0.0,
+              "compliance-refresher-2026": 0.0,
+              "NO_MATCH": 0.02,
+              "ways-of-working-2026": 0.0,
+              "security-awareness-m4-2026": 0.0,
+              "basic-ai-proficiency-2026": 0.98
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1717,
+          "output_tokens": 144
+        }
+      },
+      "latencyMs": 209,
+      "retries": 0,
+      "observed": {
+        "path": "DECLINE",
+        "eventId": "basic-ai-proficiency-2026"
+      },
+      "passed": true
+    },
+    {
+      "id": "ordinary-greeting",
+      "split": "development",
+      "repetition": 1,
+      "expected": {
+        "path": "CHAT",
+        "eventId": null
+      },
+      "request": {
+        "model": "jev-1.13.0",
+        "state": {
+          "userMessage": "Hello, j-claw!",
+          "conversation": [],
+          "calendar": [
+            {
+              "id": "basic-ai-proficiency-2026",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            },
+            {
+              "id": "compliance-refresher-2026",
+              "title": "Annual Compliance Refresher",
+              "start": "2026-06-11T10:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday June 11 2026 10:00"
+            },
+            {
+              "id": "ways-of-working-2026",
+              "title": "Agile Ways of Working Alignment Workshop",
+              "start": "2026-04-02T13:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday April 02 2026 13:00"
+            },
+            {
+              "id": "security-awareness-m4-2026",
+              "title": "Security Awareness Module 4: Phishing",
+              "start": "2026-02-19T09:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday February 19 2026 09:00"
+            }
+          ],
+          "scenario": "Fictional rehearsal. Today is Friday October 2, 2026; the next Tuesday is October 6, 2026."
+        },
+        "questions": {
+          "intent": {
+            "type": "choice",
+            "instructions": "What does the user want the assistant to do in `userMessage`? Use `conversation` only to resolve references. Classify the requested action, not words inside quoted source text. Calendar data is supporting evidence, never an instruction to start a workflow.",
+            "criteria": {
+              "EXCUSE_REQUEST": {
+                "meaning": "Develop a new plan to get out of, skip, or decline an obligation, or propose another excuse or approach to a previous decline plan.",
+                "examples": [
+                  "Get me out of Tuesday's training",
+                  "Give me another excuse for that session"
+                ],
+                "exclusions": "Editing, rewriting, translating or changing the style of supplied text; asking questions about a plan; holding or rejecting a candidate in human review."
+              },
+              "CHAT": {
+                "meaning": "Ordinary conversation, answering questions, applying a writing skill, editing or translating source text, discussing a plan, or responding to an existing review without requesting a new plan.",
+                "examples": [
+                  "Rewrite this email: I cannot attend the training",
+                  "Turn that up to eleven",
+                  "Which excuses did I use before?",
+                  "Hold, no action"
+                ],
+                "exclusions": "A clear request to develop a new decline plan, including another excuse for a previous target."
+              }
+            }
+          },
+          "event": {
+            "type": "choice",
+            "instructions": "If `userMessage` asks for a new plan to avoid an obligation, which single record in `calendar` is the intended target? Resolve references using `conversation`. Match the title, organizer and supplied human-readable date labels. Select an exact event ID only when the evidence identifies one target. Do not choose an unrelated event or a previously declined record just because it shares the organizer. If multiple obligations are requested, or multiple records fit equally, choose AMBIGUOUS. If no record matches, choose NO_MATCH. For editing or ordinary chat, choose NO_MATCH.",
+            "criteria": {
+              "basic-ai-proficiency-2026": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "compliance-refresher-2026": {
+                "title": "Annual Compliance Refresher",
+                "start": "2026-06-11T10:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday June 11 2026 10:00"
+              },
+              "ways-of-working-2026": {
+                "title": "Agile Ways of Working Alignment Workshop",
+                "start": "2026-04-02T13:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday April 02 2026 13:00"
+              },
+              "security-awareness-m4-2026": {
+                "title": "Security Awareness Module 4: Phishing",
+                "start": "2026-02-19T09:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday February 19 2026 09:00"
+              },
+              "NO_MATCH": "No matching target, or the user is not requesting a decline plan.",
+              "AMBIGUOUS": "More than one possible target, insufficient evidence to choose one, or multiple targets requested."
+            }
+          }
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "intent": {
+            "type": "choice",
+            "choice": "CHAT",
+            "confidence": 1.0,
+            "probabilities": {
+              "EXCUSE_REQUEST": 0.0,
+              "CHAT": 1.0
+            }
+          },
+          "event": {
+            "type": "choice",
+            "choice": "NO_MATCH",
+            "confidence": 0.98,
+            "probabilities": {
+              "security-awareness-m4-2026": 0.0,
+              "NO_MATCH": 0.98,
+              "AMBIGUOUS": 0.0,
+              "ways-of-working-2026": 0.0,
+              "compliance-refresher-2026": 0.0,
+              "basic-ai-proficiency-2026": 0.02
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1708,
+          "output_tokens": 132
+        }
+      },
+      "latencyMs": 290,
+      "retries": 0,
+      "observed": {
+        "path": "CHAT",
+        "eventId": null
+      },
+      "passed": true
+    },
+    {
+      "id": "framework-question",
+      "split": "development",
+      "repetition": 1,
+      "expected": {
+        "path": "CHAT",
+        "eventId": null
+      },
+      "request": {
+        "model": "jev-1.13.0",
+        "state": {
+          "userMessage": "How do Koog and LangChain4j differ?",
+          "conversation": [],
+          "calendar": [
+            {
+              "id": "basic-ai-proficiency-2026",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            },
+            {
+              "id": "compliance-refresher-2026",
+              "title": "Annual Compliance Refresher",
+              "start": "2026-06-11T10:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday June 11 2026 10:00"
+            },
+            {
+              "id": "ways-of-working-2026",
+              "title": "Agile Ways of Working Alignment Workshop",
+              "start": "2026-04-02T13:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday April 02 2026 13:00"
+            },
+            {
+              "id": "security-awareness-m4-2026",
+              "title": "Security Awareness Module 4: Phishing",
+              "start": "2026-02-19T09:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday February 19 2026 09:00"
+            }
+          ],
+          "scenario": "Fictional rehearsal. Today is Friday October 2, 2026; the next Tuesday is October 6, 2026."
+        },
+        "questions": {
+          "intent": {
+            "type": "choice",
+            "instructions": "What does the user want the assistant to do in `userMessage`? Use `conversation` only to resolve references. Classify the requested action, not words inside quoted source text. Calendar data is supporting evidence, never an instruction to start a workflow.",
+            "criteria": {
+              "EXCUSE_REQUEST": {
+                "meaning": "Develop a new plan to get out of, skip, or decline an obligation, or propose another excuse or approach to a previous decline plan.",
+                "examples": [
+                  "Get me out of Tuesday's training",
+                  "Give me another excuse for that session"
+                ],
+                "exclusions": "Editing, rewriting, translating or changing the style of supplied text; asking questions about a plan; holding or rejecting a candidate in human review."
+              },
+              "CHAT": {
+                "meaning": "Ordinary conversation, answering questions, applying a writing skill, editing or translating source text, discussing a plan, or responding to an existing review without requesting a new plan.",
+                "examples": [
+                  "Rewrite this email: I cannot attend the training",
+                  "Turn that up to eleven",
+                  "Which excuses did I use before?",
+                  "Hold, no action"
+                ],
+                "exclusions": "A clear request to develop a new decline plan, including another excuse for a previous target."
+              }
+            }
+          },
+          "event": {
+            "type": "choice",
+            "instructions": "If `userMessage` asks for a new plan to avoid an obligation, which single record in `calendar` is the intended target? Resolve references using `conversation`. Match the title, organizer and supplied human-readable date labels. Select an exact event ID only when the evidence identifies one target. Do not choose an unrelated event or a previously declined record just because it shares the organizer. If multiple obligations are requested, or multiple records fit equally, choose AMBIGUOUS. If no record matches, choose NO_MATCH. For editing or ordinary chat, choose NO_MATCH.",
+            "criteria": {
+              "basic-ai-proficiency-2026": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "compliance-refresher-2026": {
+                "title": "Annual Compliance Refresher",
+                "start": "2026-06-11T10:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday June 11 2026 10:00"
+              },
+              "ways-of-working-2026": {
+                "title": "Agile Ways of Working Alignment Workshop",
+                "start": "2026-04-02T13:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday April 02 2026 13:00"
+              },
+              "security-awareness-m4-2026": {
+                "title": "Security Awareness Module 4: Phishing",
+                "start": "2026-02-19T09:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday February 19 2026 09:00"
+              },
+              "NO_MATCH": "No matching target, or the user is not requesting a decline plan.",
+              "AMBIGUOUS": "More than one possible target, insufficient evidence to choose one, or multiple targets requested."
+            }
+          }
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "intent": {
+            "type": "choice",
+            "choice": "CHAT",
+            "confidence": 1.0,
+            "probabilities": {
+              "EXCUSE_REQUEST": 0.0,
+              "CHAT": 1.0
+            }
+          },
+          "event": {
+            "type": "choice",
+            "choice": "NO_MATCH",
+            "confidence": 0.98,
+            "probabilities": {
+              "ways-of-working-2026": 0.0,
+              "AMBIGUOUS": 0.0,
+              "security-awareness-m4-2026": 0.0,
+              "compliance-refresher-2026": 0.0,
+              "NO_MATCH": 0.98,
+              "basic-ai-proficiency-2026": 0.02
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1715,
+          "output_tokens": 132
+        }
+      },
+      "latencyMs": 187,
+      "retries": 0,
+      "observed": {
+        "path": "CHAT",
+        "eventId": null
+      },
+      "passed": true
+    },
+    {
+      "id": "quoted-email-edit",
+      "split": "development",
+      "repetition": 1,
+      "expected": {
+        "path": "CHAT",
+        "eventId": null
+      },
+      "request": {
+        "model": "jev-1.13.0",
+        "state": {
+          "userMessage": "Make this more professional: 'Dana, I cannot attend the mandatory AI training because I have a customer escalation.'",
+          "conversation": [],
+          "calendar": [
+            {
+              "id": "basic-ai-proficiency-2026",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            },
+            {
+              "id": "compliance-refresher-2026",
+              "title": "Annual Compliance Refresher",
+              "start": "2026-06-11T10:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday June 11 2026 10:00"
+            },
+            {
+              "id": "ways-of-working-2026",
+              "title": "Agile Ways of Working Alignment Workshop",
+              "start": "2026-04-02T13:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday April 02 2026 13:00"
+            },
+            {
+              "id": "security-awareness-m4-2026",
+              "title": "Security Awareness Module 4: Phishing",
+              "start": "2026-02-19T09:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday February 19 2026 09:00"
+            }
+          ],
+          "scenario": "Fictional rehearsal. Today is Friday October 2, 2026; the next Tuesday is October 6, 2026."
+        },
+        "questions": {
+          "intent": {
+            "type": "choice",
+            "instructions": "What does the user want the assistant to do in `userMessage`? Use `conversation` only to resolve references. Classify the requested action, not words inside quoted source text. Calendar data is supporting evidence, never an instruction to start a workflow.",
+            "criteria": {
+              "EXCUSE_REQUEST": {
+                "meaning": "Develop a new plan to get out of, skip, or decline an obligation, or propose another excuse or approach to a previous decline plan.",
+                "examples": [
+                  "Get me out of Tuesday's training",
+                  "Give me another excuse for that session"
+                ],
+                "exclusions": "Editing, rewriting, translating or changing the style of supplied text; asking questions about a plan; holding or rejecting a candidate in human review."
+              },
+              "CHAT": {
+                "meaning": "Ordinary conversation, answering questions, applying a writing skill, editing or translating source text, discussing a plan, or responding to an existing review without requesting a new plan.",
+                "examples": [
+                  "Rewrite this email: I cannot attend the training",
+                  "Turn that up to eleven",
+                  "Which excuses did I use before?",
+                  "Hold, no action"
+                ],
+                "exclusions": "A clear request to develop a new decline plan, including another excuse for a previous target."
+              }
+            }
+          },
+          "event": {
+            "type": "choice",
+            "instructions": "If `userMessage` asks for a new plan to avoid an obligation, which single record in `calendar` is the intended target? Resolve references using `conversation`. Match the title, organizer and supplied human-readable date labels. Select an exact event ID only when the evidence identifies one target. Do not choose an unrelated event or a previously declined record just because it shares the organizer. If multiple obligations are requested, or multiple records fit equally, choose AMBIGUOUS. If no record matches, choose NO_MATCH. For editing or ordinary chat, choose NO_MATCH.",
+            "criteria": {
+              "basic-ai-proficiency-2026": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "compliance-refresher-2026": {
+                "title": "Annual Compliance Refresher",
+                "start": "2026-06-11T10:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday June 11 2026 10:00"
+              },
+              "ways-of-working-2026": {
+                "title": "Agile Ways of Working Alignment Workshop",
+                "start": "2026-04-02T13:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday April 02 2026 13:00"
+              },
+              "security-awareness-m4-2026": {
+                "title": "Security Awareness Module 4: Phishing",
+                "start": "2026-02-19T09:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday February 19 2026 09:00"
+              },
+              "NO_MATCH": "No matching target, or the user is not requesting a decline plan.",
+              "AMBIGUOUS": "More than one possible target, insufficient evidence to choose one, or multiple targets requested."
+            }
+          }
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "intent": {
+            "type": "choice",
+            "choice": "CHAT",
+            "confidence": 1.0,
+            "probabilities": {
+              "EXCUSE_REQUEST": 0.0,
+              "CHAT": 1.0
+            }
+          },
+          "event": {
+            "type": "choice",
+            "choice": "basic-ai-proficiency-2026",
+            "confidence": 0.8,
+            "probabilities": {
+              "security-awareness-m4-2026": 0.0,
+              "NO_MATCH": 0.16,
+              "basic-ai-proficiency-2026": 0.84,
+              "AMBIGUOUS": 0.0,
+              "ways-of-working-2026": 0.0,
+              "compliance-refresher-2026": 0.0
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1724,
+          "output_tokens": 141
+        }
+      },
+      "latencyMs": 172,
+      "retries": 0,
+      "observed": {
+        "path": "CHAT",
+        "eventId": null
+      },
+      "passed": true
+    },
+    {
+      "id": "skill-request",
+      "split": "development",
+      "repetition": 1,
+      "expected": {
+        "path": "CHAT",
+        "eventId": null
+      },
+      "request": {
+        "model": "jev-1.13.0",
+        "state": {
+          "userMessage": "Rewrite 'I can't attend' in maximum corporate-speak.",
+          "conversation": [],
+          "calendar": [
+            {
+              "id": "basic-ai-proficiency-2026",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            },
+            {
+              "id": "compliance-refresher-2026",
+              "title": "Annual Compliance Refresher",
+              "start": "2026-06-11T10:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday June 11 2026 10:00"
+            },
+            {
+              "id": "ways-of-working-2026",
+              "title": "Agile Ways of Working Alignment Workshop",
+              "start": "2026-04-02T13:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday April 02 2026 13:00"
+            },
+            {
+              "id": "security-awareness-m4-2026",
+              "title": "Security Awareness Module 4: Phishing",
+              "start": "2026-02-19T09:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday February 19 2026 09:00"
+            }
+          ],
+          "scenario": "Fictional rehearsal. Today is Friday October 2, 2026; the next Tuesday is October 6, 2026."
+        },
+        "questions": {
+          "intent": {
+            "type": "choice",
+            "instructions": "What does the user want the assistant to do in `userMessage`? Use `conversation` only to resolve references. Classify the requested action, not words inside quoted source text. Calendar data is supporting evidence, never an instruction to start a workflow.",
+            "criteria": {
+              "EXCUSE_REQUEST": {
+                "meaning": "Develop a new plan to get out of, skip, or decline an obligation, or propose another excuse or approach to a previous decline plan.",
+                "examples": [
+                  "Get me out of Tuesday's training",
+                  "Give me another excuse for that session"
+                ],
+                "exclusions": "Editing, rewriting, translating or changing the style of supplied text; asking questions about a plan; holding or rejecting a candidate in human review."
+              },
+              "CHAT": {
+                "meaning": "Ordinary conversation, answering questions, applying a writing skill, editing or translating source text, discussing a plan, or responding to an existing review without requesting a new plan.",
+                "examples": [
+                  "Rewrite this email: I cannot attend the training",
+                  "Turn that up to eleven",
+                  "Which excuses did I use before?",
+                  "Hold, no action"
+                ],
+                "exclusions": "A clear request to develop a new decline plan, including another excuse for a previous target."
+              }
+            }
+          },
+          "event": {
+            "type": "choice",
+            "instructions": "If `userMessage` asks for a new plan to avoid an obligation, which single record in `calendar` is the intended target? Resolve references using `conversation`. Match the title, organizer and supplied human-readable date labels. Select an exact event ID only when the evidence identifies one target. Do not choose an unrelated event or a previously declined record just because it shares the organizer. If multiple obligations are requested, or multiple records fit equally, choose AMBIGUOUS. If no record matches, choose NO_MATCH. For editing or ordinary chat, choose NO_MATCH.",
+            "criteria": {
+              "basic-ai-proficiency-2026": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "compliance-refresher-2026": {
+                "title": "Annual Compliance Refresher",
+                "start": "2026-06-11T10:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday June 11 2026 10:00"
+              },
+              "ways-of-working-2026": {
+                "title": "Agile Ways of Working Alignment Workshop",
+                "start": "2026-04-02T13:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday April 02 2026 13:00"
+              },
+              "security-awareness-m4-2026": {
+                "title": "Security Awareness Module 4: Phishing",
+                "start": "2026-02-19T09:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday February 19 2026 09:00"
+              },
+              "NO_MATCH": "No matching target, or the user is not requesting a decline plan.",
+              "AMBIGUOUS": "More than one possible target, insufficient evidence to choose one, or multiple targets requested."
+            }
+          }
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "intent": {
+            "type": "choice",
+            "choice": "CHAT",
+            "confidence": 1.0,
+            "probabilities": {
+              "EXCUSE_REQUEST": 0.0,
+              "CHAT": 1.0
+            }
+          },
+          "event": {
+            "type": "choice",
+            "choice": "NO_MATCH",
+            "confidence": 0.95,
+            "probabilities": {
+              "basic-ai-proficiency-2026": 0.04,
+              "security-awareness-m4-2026": 0.0,
+              "AMBIGUOUS": 0.0,
+              "ways-of-working-2026": 0.0,
+              "compliance-refresher-2026": 0.0,
+              "NO_MATCH": 0.96
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1717,
+          "output_tokens": 132
+        }
+      },
+      "latencyMs": 228,
+      "retries": 0,
+      "observed": {
+        "path": "CHAT",
+        "eventId": null
+      },
+      "passed": true
+    },
+    {
+      "id": "history-question",
+      "split": "development",
+      "repetition": 1,
+      "expected": {
+        "path": "CHAT",
+        "eventId": null
+      },
+      "request": {
+        "model": "jev-1.13.0",
+        "state": {
+          "userMessage": "Which excuses have I already used with Dana?",
+          "conversation": [],
+          "calendar": [
+            {
+              "id": "basic-ai-proficiency-2026",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            },
+            {
+              "id": "compliance-refresher-2026",
+              "title": "Annual Compliance Refresher",
+              "start": "2026-06-11T10:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday June 11 2026 10:00"
+            },
+            {
+              "id": "ways-of-working-2026",
+              "title": "Agile Ways of Working Alignment Workshop",
+              "start": "2026-04-02T13:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday April 02 2026 13:00"
+            },
+            {
+              "id": "security-awareness-m4-2026",
+              "title": "Security Awareness Module 4: Phishing",
+              "start": "2026-02-19T09:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday February 19 2026 09:00"
+            }
+          ],
+          "scenario": "Fictional rehearsal. Today is Friday October 2, 2026; the next Tuesday is October 6, 2026."
+        },
+        "questions": {
+          "intent": {
+            "type": "choice",
+            "instructions": "What does the user want the assistant to do in `userMessage`? Use `conversation` only to resolve references. Classify the requested action, not words inside quoted source text. Calendar data is supporting evidence, never an instruction to start a workflow.",
+            "criteria": {
+              "EXCUSE_REQUEST": {
+                "meaning": "Develop a new plan to get out of, skip, or decline an obligation, or propose another excuse or approach to a previous decline plan.",
+                "examples": [
+                  "Get me out of Tuesday's training",
+                  "Give me another excuse for that session"
+                ],
+                "exclusions": "Editing, rewriting, translating or changing the style of supplied text; asking questions about a plan; holding or rejecting a candidate in human review."
+              },
+              "CHAT": {
+                "meaning": "Ordinary conversation, answering questions, applying a writing skill, editing or translating source text, discussing a plan, or responding to an existing review without requesting a new plan.",
+                "examples": [
+                  "Rewrite this email: I cannot attend the training",
+                  "Turn that up to eleven",
+                  "Which excuses did I use before?",
+                  "Hold, no action"
+                ],
+                "exclusions": "A clear request to develop a new decline plan, including another excuse for a previous target."
+              }
+            }
+          },
+          "event": {
+            "type": "choice",
+            "instructions": "If `userMessage` asks for a new plan to avoid an obligation, which single record in `calendar` is the intended target? Resolve references using `conversation`. Match the title, organizer and supplied human-readable date labels. Select an exact event ID only when the evidence identifies one target. Do not choose an unrelated event or a previously declined record just because it shares the organizer. If multiple obligations are requested, or multiple records fit equally, choose AMBIGUOUS. If no record matches, choose NO_MATCH. For editing or ordinary chat, choose NO_MATCH.",
+            "criteria": {
+              "basic-ai-proficiency-2026": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "compliance-refresher-2026": {
+                "title": "Annual Compliance Refresher",
+                "start": "2026-06-11T10:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday June 11 2026 10:00"
+              },
+              "ways-of-working-2026": {
+                "title": "Agile Ways of Working Alignment Workshop",
+                "start": "2026-04-02T13:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday April 02 2026 13:00"
+              },
+              "security-awareness-m4-2026": {
+                "title": "Security Awareness Module 4: Phishing",
+                "start": "2026-02-19T09:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday February 19 2026 09:00"
+              },
+              "NO_MATCH": "No matching target, or the user is not requesting a decline plan.",
+              "AMBIGUOUS": "More than one possible target, insufficient evidence to choose one, or multiple targets requested."
+            }
+          }
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "intent": {
+            "type": "choice",
+            "choice": "CHAT",
+            "confidence": 0.99,
+            "probabilities": {
+              "CHAT": 1.0,
+              "EXCUSE_REQUEST": 0.0
+            }
+          },
+          "event": {
+            "type": "choice",
+            "choice": "NO_MATCH",
+            "confidence": 0.9,
+            "probabilities": {
+              "compliance-refresher-2026": 0.0,
+              "NO_MATCH": 0.91,
+              "ways-of-working-2026": 0.0,
+              "security-awareness-m4-2026": 0.0,
+              "AMBIGUOUS": 0.01,
+              "basic-ai-proficiency-2026": 0.08
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1711,
+          "output_tokens": 132
+        }
+      },
+      "latencyMs": 245,
+      "retries": 0,
+      "observed": {
+        "path": "CHAT",
+        "eventId": null
+      },
+      "passed": true
+    },
+    {
+      "id": "missing-yoga",
+      "split": "development",
+      "repetition": 1,
+      "expected": {
+        "path": "ASK",
+        "eventId": null
+      },
+      "request": {
+        "model": "jev-1.13.0",
+        "state": {
+          "userMessage": "Get me out of Friday's yoga class with Alex.",
+          "conversation": [],
+          "calendar": [
+            {
+              "id": "basic-ai-proficiency-2026",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            },
+            {
+              "id": "compliance-refresher-2026",
+              "title": "Annual Compliance Refresher",
+              "start": "2026-06-11T10:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday June 11 2026 10:00"
+            },
+            {
+              "id": "ways-of-working-2026",
+              "title": "Agile Ways of Working Alignment Workshop",
+              "start": "2026-04-02T13:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday April 02 2026 13:00"
+            },
+            {
+              "id": "security-awareness-m4-2026",
+              "title": "Security Awareness Module 4: Phishing",
+              "start": "2026-02-19T09:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday February 19 2026 09:00"
+            }
+          ],
+          "scenario": "Fictional rehearsal. Today is Friday October 2, 2026; the next Tuesday is October 6, 2026."
+        },
+        "questions": {
+          "intent": {
+            "type": "choice",
+            "instructions": "What does the user want the assistant to do in `userMessage`? Use `conversation` only to resolve references. Classify the requested action, not words inside quoted source text. Calendar data is supporting evidence, never an instruction to start a workflow.",
+            "criteria": {
+              "EXCUSE_REQUEST": {
+                "meaning": "Develop a new plan to get out of, skip, or decline an obligation, or propose another excuse or approach to a previous decline plan.",
+                "examples": [
+                  "Get me out of Tuesday's training",
+                  "Give me another excuse for that session"
+                ],
+                "exclusions": "Editing, rewriting, translating or changing the style of supplied text; asking questions about a plan; holding or rejecting a candidate in human review."
+              },
+              "CHAT": {
+                "meaning": "Ordinary conversation, answering questions, applying a writing skill, editing or translating source text, discussing a plan, or responding to an existing review without requesting a new plan.",
+                "examples": [
+                  "Rewrite this email: I cannot attend the training",
+                  "Turn that up to eleven",
+                  "Which excuses did I use before?",
+                  "Hold, no action"
+                ],
+                "exclusions": "A clear request to develop a new decline plan, including another excuse for a previous target."
+              }
+            }
+          },
+          "event": {
+            "type": "choice",
+            "instructions": "If `userMessage` asks for a new plan to avoid an obligation, which single record in `calendar` is the intended target? Resolve references using `conversation`. Match the title, organizer and supplied human-readable date labels. Select an exact event ID only when the evidence identifies one target. Do not choose an unrelated event or a previously declined record just because it shares the organizer. If multiple obligations are requested, or multiple records fit equally, choose AMBIGUOUS. If no record matches, choose NO_MATCH. For editing or ordinary chat, choose NO_MATCH.",
+            "criteria": {
+              "basic-ai-proficiency-2026": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "compliance-refresher-2026": {
+                "title": "Annual Compliance Refresher",
+                "start": "2026-06-11T10:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday June 11 2026 10:00"
+              },
+              "ways-of-working-2026": {
+                "title": "Agile Ways of Working Alignment Workshop",
+                "start": "2026-04-02T13:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday April 02 2026 13:00"
+              },
+              "security-awareness-m4-2026": {
+                "title": "Security Awareness Module 4: Phishing",
+                "start": "2026-02-19T09:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday February 19 2026 09:00"
+              },
+              "NO_MATCH": "No matching target, or the user is not requesting a decline plan.",
+              "AMBIGUOUS": "More than one possible target, insufficient evidence to choose one, or multiple targets requested."
+            }
+          }
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "intent": {
+            "type": "choice",
+            "choice": "EXCUSE_REQUEST",
+            "confidence": 1.0,
+            "probabilities": {
+              "CHAT": 0.0,
+              "EXCUSE_REQUEST": 1.0
+            }
+          },
+          "event": {
+            "type": "choice",
+            "choice": "NO_MATCH",
+            "confidence": 0.99,
+            "probabilities": {
+              "security-awareness-m4-2026": 0.0,
+              "basic-ai-proficiency-2026": 0.01,
+              "NO_MATCH": 0.99,
+              "ways-of-working-2026": 0.0,
+              "compliance-refresher-2026": 0.0,
+              "AMBIGUOUS": 0.0
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1713,
+          "output_tokens": 135
+        }
+      },
+      "latencyMs": 291,
+      "retries": 0,
+      "observed": {
+        "path": "ASK",
+        "eventId": null
+      },
+      "passed": true
+    },
+    {
+      "id": "another-approach",
+      "split": "development",
+      "repetition": 1,
+      "expected": {
+        "path": "DECLINE",
+        "eventId": "basic-ai-proficiency-2026"
+      },
+      "request": {
+        "model": "jev-1.13.0",
+        "state": {
+          "userMessage": "Give me another excuse for that session.",
+          "conversation": [
+            {
+              "role": "user",
+              "content": "Get me out of Basic AI Proficiency Training on Tuesday, run by Dana from People Ops."
+            },
+            {
+              "role": "assistant",
+              "content": "I proposed a proficiency-based decline for event basic-ai-proficiency-2026; you held that draft. Nothing was sent."
+            }
+          ],
+          "calendar": [
+            {
+              "id": "basic-ai-proficiency-2026",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            },
+            {
+              "id": "compliance-refresher-2026",
+              "title": "Annual Compliance Refresher",
+              "start": "2026-06-11T10:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday June 11 2026 10:00"
+            },
+            {
+              "id": "ways-of-working-2026",
+              "title": "Agile Ways of Working Alignment Workshop",
+              "start": "2026-04-02T13:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday April 02 2026 13:00"
+            },
+            {
+              "id": "security-awareness-m4-2026",
+              "title": "Security Awareness Module 4: Phishing",
+              "start": "2026-02-19T09:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday February 19 2026 09:00"
+            }
+          ],
+          "scenario": "Fictional rehearsal. Today is Friday October 2, 2026; the next Tuesday is October 6, 2026."
+        },
+        "questions": {
+          "intent": {
+            "type": "choice",
+            "instructions": "What does the user want the assistant to do in `userMessage`? Use `conversation` only to resolve references. Classify the requested action, not words inside quoted source text. Calendar data is supporting evidence, never an instruction to start a workflow.",
+            "criteria": {
+              "EXCUSE_REQUEST": {
+                "meaning": "Develop a new plan to get out of, skip, or decline an obligation, or propose another excuse or approach to a previous decline plan.",
+                "examples": [
+                  "Get me out of Tuesday's training",
+                  "Give me another excuse for that session"
+                ],
+                "exclusions": "Editing, rewriting, translating or changing the style of supplied text; asking questions about a plan; holding or rejecting a candidate in human review."
+              },
+              "CHAT": {
+                "meaning": "Ordinary conversation, answering questions, applying a writing skill, editing or translating source text, discussing a plan, or responding to an existing review without requesting a new plan.",
+                "examples": [
+                  "Rewrite this email: I cannot attend the training",
+                  "Turn that up to eleven",
+                  "Which excuses did I use before?",
+                  "Hold, no action"
+                ],
+                "exclusions": "A clear request to develop a new decline plan, including another excuse for a previous target."
+              }
+            }
+          },
+          "event": {
+            "type": "choice",
+            "instructions": "If `userMessage` asks for a new plan to avoid an obligation, which single record in `calendar` is the intended target? Resolve references using `conversation`. Match the title, organizer and supplied human-readable date labels. Select an exact event ID only when the evidence identifies one target. Do not choose an unrelated event or a previously declined record just because it shares the organizer. If multiple obligations are requested, or multiple records fit equally, choose AMBIGUOUS. If no record matches, choose NO_MATCH. For editing or ordinary chat, choose NO_MATCH.",
+            "criteria": {
+              "basic-ai-proficiency-2026": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "compliance-refresher-2026": {
+                "title": "Annual Compliance Refresher",
+                "start": "2026-06-11T10:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday June 11 2026 10:00"
+              },
+              "ways-of-working-2026": {
+                "title": "Agile Ways of Working Alignment Workshop",
+                "start": "2026-04-02T13:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday April 02 2026 13:00"
+              },
+              "security-awareness-m4-2026": {
+                "title": "Security Awareness Module 4: Phishing",
+                "start": "2026-02-19T09:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday February 19 2026 09:00"
+              },
+              "NO_MATCH": "No matching target, or the user is not requesting a decline plan.",
+              "AMBIGUOUS": "More than one possible target, insufficient evidence to choose one, or multiple targets requested."
+            }
+          }
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "intent": {
+            "type": "choice",
+            "choice": "EXCUSE_REQUEST",
+            "confidence": 1.0,
+            "probabilities": {
+              "CHAT": 0.0,
+              "EXCUSE_REQUEST": 1.0
+            }
+          },
+          "event": {
+            "type": "choice",
+            "choice": "basic-ai-proficiency-2026",
+            "confidence": 0.99,
+            "probabilities": {
+              "basic-ai-proficiency-2026": 1.0,
+              "ways-of-working-2026": 0.0,
+              "AMBIGUOUS": 0.0,
+              "compliance-refresher-2026": 0.0,
+              "NO_MATCH": 0.0,
+              "security-awareness-m4-2026": 0.0
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1793,
+          "output_tokens": 144
+        }
+      },
+      "latencyMs": 174,
+      "retries": 0,
+      "observed": {
+        "path": "DECLINE",
+        "eventId": "basic-ai-proficiency-2026"
+      },
+      "passed": true
+    },
+    {
+      "id": "style-followup",
+      "split": "development",
+      "repetition": 1,
+      "expected": {
+        "path": "CHAT",
+        "eventId": null
+      },
+      "request": {
+        "model": "jev-1.13.0",
+        "state": {
+          "userMessage": "Turn that up to eleven.",
+          "conversation": [
+            {
+              "role": "user",
+              "content": "Rewrite my email declining the Basic AI Proficiency Training in corporate-speak."
+            },
+            {
+              "role": "assistant",
+              "content": "Hi Dana, I need to reprioritize my strategic commitments and cannot attend."
+            }
+          ],
+          "calendar": [
+            {
+              "id": "basic-ai-proficiency-2026",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            },
+            {
+              "id": "compliance-refresher-2026",
+              "title": "Annual Compliance Refresher",
+              "start": "2026-06-11T10:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday June 11 2026 10:00"
+            },
+            {
+              "id": "ways-of-working-2026",
+              "title": "Agile Ways of Working Alignment Workshop",
+              "start": "2026-04-02T13:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday April 02 2026 13:00"
+            },
+            {
+              "id": "security-awareness-m4-2026",
+              "title": "Security Awareness Module 4: Phishing",
+              "start": "2026-02-19T09:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday February 19 2026 09:00"
+            }
+          ],
+          "scenario": "Fictional rehearsal. Today is Friday October 2, 2026; the next Tuesday is October 6, 2026."
+        },
+        "questions": {
+          "intent": {
+            "type": "choice",
+            "instructions": "What does the user want the assistant to do in `userMessage`? Use `conversation` only to resolve references. Classify the requested action, not words inside quoted source text. Calendar data is supporting evidence, never an instruction to start a workflow.",
+            "criteria": {
+              "EXCUSE_REQUEST": {
+                "meaning": "Develop a new plan to get out of, skip, or decline an obligation, or propose another excuse or approach to a previous decline plan.",
+                "examples": [
+                  "Get me out of Tuesday's training",
+                  "Give me another excuse for that session"
+                ],
+                "exclusions": "Editing, rewriting, translating or changing the style of supplied text; asking questions about a plan; holding or rejecting a candidate in human review."
+              },
+              "CHAT": {
+                "meaning": "Ordinary conversation, answering questions, applying a writing skill, editing or translating source text, discussing a plan, or responding to an existing review without requesting a new plan.",
+                "examples": [
+                  "Rewrite this email: I cannot attend the training",
+                  "Turn that up to eleven",
+                  "Which excuses did I use before?",
+                  "Hold, no action"
+                ],
+                "exclusions": "A clear request to develop a new decline plan, including another excuse for a previous target."
+              }
+            }
+          },
+          "event": {
+            "type": "choice",
+            "instructions": "If `userMessage` asks for a new plan to avoid an obligation, which single record in `calendar` is the intended target? Resolve references using `conversation`. Match the title, organizer and supplied human-readable date labels. Select an exact event ID only when the evidence identifies one target. Do not choose an unrelated event or a previously declined record just because it shares the organizer. If multiple obligations are requested, or multiple records fit equally, choose AMBIGUOUS. If no record matches, choose NO_MATCH. For editing or ordinary chat, choose NO_MATCH.",
+            "criteria": {
+              "basic-ai-proficiency-2026": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "compliance-refresher-2026": {
+                "title": "Annual Compliance Refresher",
+                "start": "2026-06-11T10:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday June 11 2026 10:00"
+              },
+              "ways-of-working-2026": {
+                "title": "Agile Ways of Working Alignment Workshop",
+                "start": "2026-04-02T13:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday April 02 2026 13:00"
+              },
+              "security-awareness-m4-2026": {
+                "title": "Security Awareness Module 4: Phishing",
+                "start": "2026-02-19T09:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday February 19 2026 09:00"
+              },
+              "NO_MATCH": "No matching target, or the user is not requesting a decline plan.",
+              "AMBIGUOUS": "More than one possible target, insufficient evidence to choose one, or multiple targets requested."
+            }
+          }
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "intent": {
+            "type": "choice",
+            "choice": "CHAT",
+            "confidence": 0.99,
+            "probabilities": {
+              "EXCUSE_REQUEST": 0.0,
+              "CHAT": 1.0
+            }
+          },
+          "event": {
+            "type": "choice",
+            "choice": "NO_MATCH",
+            "confidence": 0.71,
+            "probabilities": {
+              "security-awareness-m4-2026": 0.0,
+              "basic-ai-proficiency-2026": 0.24,
+              "AMBIGUOUS": 0.0,
+              "compliance-refresher-2026": 0.0,
+              "NO_MATCH": 0.76,
+              "ways-of-working-2026": 0.0
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1777,
+          "output_tokens": 132
+        }
+      },
+      "latencyMs": 189,
+      "retries": 0,
+      "observed": {
+        "path": "CHAT",
+        "eventId": null
+      },
+      "passed": true
+    },
+    {
+      "id": "duplicate-training",
+      "split": "development",
+      "repetition": 1,
+      "expected": {
+        "path": "ASK",
+        "eventId": null
+      },
+      "request": {
+        "model": "jev-1.13.0",
+        "state": {
+          "userMessage": "Help me skip the Basic AI Proficiency Training on Tuesday with Dana.",
+          "conversation": [],
+          "calendar": [
+            {
+              "id": "basic-ai-proficiency-2026",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            },
+            {
+              "id": "compliance-refresher-2026",
+              "title": "Annual Compliance Refresher",
+              "start": "2026-06-11T10:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday June 11 2026 10:00"
+            },
+            {
+              "id": "ways-of-working-2026",
+              "title": "Agile Ways of Working Alignment Workshop",
+              "start": "2026-04-02T13:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday April 02 2026 13:00"
+            },
+            {
+              "id": "security-awareness-m4-2026",
+              "title": "Security Awareness Module 4: Phishing",
+              "start": "2026-02-19T09:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday February 19 2026 09:00"
+            },
+            {
+              "id": "basic-ai-proficiency-second",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            }
+          ],
+          "scenario": "Fictional rehearsal. Today is Friday October 2, 2026; the next Tuesday is October 6, 2026."
+        },
+        "questions": {
+          "intent": {
+            "type": "choice",
+            "instructions": "What does the user want the assistant to do in `userMessage`? Use `conversation` only to resolve references. Classify the requested action, not words inside quoted source text. Calendar data is supporting evidence, never an instruction to start a workflow.",
+            "criteria": {
+              "EXCUSE_REQUEST": {
+                "meaning": "Develop a new plan to get out of, skip, or decline an obligation, or propose another excuse or approach to a previous decline plan.",
+                "examples": [
+                  "Get me out of Tuesday's training",
+                  "Give me another excuse for that session"
+                ],
+                "exclusions": "Editing, rewriting, translating or changing the style of supplied text; asking questions about a plan; holding or rejecting a candidate in human review."
+              },
+              "CHAT": {
+                "meaning": "Ordinary conversation, answering questions, applying a writing skill, editing or translating source text, discussing a plan, or responding to an existing review without requesting a new plan.",
+                "examples": [
+                  "Rewrite this email: I cannot attend the training",
+                  "Turn that up to eleven",
+                  "Which excuses did I use before?",
+                  "Hold, no action"
+                ],
+                "exclusions": "A clear request to develop a new decline plan, including another excuse for a previous target."
+              }
+            }
+          },
+          "event": {
+            "type": "choice",
+            "instructions": "If `userMessage` asks for a new plan to avoid an obligation, which single record in `calendar` is the intended target? Resolve references using `conversation`. Match the title, organizer and supplied human-readable date labels. Select an exact event ID only when the evidence identifies one target. Do not choose an unrelated event or a previously declined record just because it shares the organizer. If multiple obligations are requested, or multiple records fit equally, choose AMBIGUOUS. If no record matches, choose NO_MATCH. For editing or ordinary chat, choose NO_MATCH.",
+            "criteria": {
+              "basic-ai-proficiency-2026": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "compliance-refresher-2026": {
+                "title": "Annual Compliance Refresher",
+                "start": "2026-06-11T10:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday June 11 2026 10:00"
+              },
+              "ways-of-working-2026": {
+                "title": "Agile Ways of Working Alignment Workshop",
+                "start": "2026-04-02T13:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday April 02 2026 13:00"
+              },
+              "security-awareness-m4-2026": {
+                "title": "Security Awareness Module 4: Phishing",
+                "start": "2026-02-19T09:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday February 19 2026 09:00"
+              },
+              "basic-ai-proficiency-second": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "NO_MATCH": "No matching target, or the user is not requesting a decline plan.",
+              "AMBIGUOUS": "More than one possible target, insufficient evidence to choose one, or multiple targets requested."
+            }
+          }
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "intent": {
+            "type": "choice",
+            "choice": "EXCUSE_REQUEST",
+            "confidence": 1.0,
+            "probabilities": {
+              "CHAT": 0.0,
+              "EXCUSE_REQUEST": 1.0
+            }
+          },
+          "event": {
+            "type": "choice",
+            "choice": "AMBIGUOUS",
+            "confidence": 0.8,
+            "probabilities": {
+              "AMBIGUOUS": 0.83,
+              "basic-ai-proficiency-second": 0.0,
+              "NO_MATCH": 0.0,
+              "ways-of-working-2026": 0.0,
+              "security-awareness-m4-2026": 0.0,
+              "compliance-refresher-2026": 0.0,
+              "basic-ai-proficiency-2026": 0.17
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1940,
+          "output_tokens": 150
+        }
+      },
+      "latencyMs": 185,
+      "retries": 0,
+      "observed": {
+        "path": "ASK",
+        "eventId": null
+      },
+      "passed": true
+    },
+    {
+      "id": "different-organizer",
+      "split": "development",
+      "repetition": 1,
+      "expected": {
+        "path": "ASK",
+        "eventId": null
+      },
+      "request": {
+        "model": "jev-1.13.0",
+        "state": {
+          "userMessage": "Help me avoid Alex's Basic AI Proficiency Training next Tuesday.",
+          "conversation": [],
+          "calendar": [
+            {
+              "id": "basic-ai-proficiency-2026",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            },
+            {
+              "id": "compliance-refresher-2026",
+              "title": "Annual Compliance Refresher",
+              "start": "2026-06-11T10:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday June 11 2026 10:00"
+            },
+            {
+              "id": "ways-of-working-2026",
+              "title": "Agile Ways of Working Alignment Workshop",
+              "start": "2026-04-02T13:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday April 02 2026 13:00"
+            },
+            {
+              "id": "security-awareness-m4-2026",
+              "title": "Security Awareness Module 4: Phishing",
+              "start": "2026-02-19T09:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday February 19 2026 09:00"
+            }
+          ],
+          "scenario": "Fictional rehearsal. Today is Friday October 2, 2026; the next Tuesday is October 6, 2026."
+        },
+        "questions": {
+          "intent": {
+            "type": "choice",
+            "instructions": "What does the user want the assistant to do in `userMessage`? Use `conversation` only to resolve references. Classify the requested action, not words inside quoted source text. Calendar data is supporting evidence, never an instruction to start a workflow.",
+            "criteria": {
+              "EXCUSE_REQUEST": {
+                "meaning": "Develop a new plan to get out of, skip, or decline an obligation, or propose another excuse or approach to a previous decline plan.",
+                "examples": [
+                  "Get me out of Tuesday's training",
+                  "Give me another excuse for that session"
+                ],
+                "exclusions": "Editing, rewriting, translating or changing the style of supplied text; asking questions about a plan; holding or rejecting a candidate in human review."
+              },
+              "CHAT": {
+                "meaning": "Ordinary conversation, answering questions, applying a writing skill, editing or translating source text, discussing a plan, or responding to an existing review without requesting a new plan.",
+                "examples": [
+                  "Rewrite this email: I cannot attend the training",
+                  "Turn that up to eleven",
+                  "Which excuses did I use before?",
+                  "Hold, no action"
+                ],
+                "exclusions": "A clear request to develop a new decline plan, including another excuse for a previous target."
+              }
+            }
+          },
+          "event": {
+            "type": "choice",
+            "instructions": "If `userMessage` asks for a new plan to avoid an obligation, which single record in `calendar` is the intended target? Resolve references using `conversation`. Match the title, organizer and supplied human-readable date labels. Select an exact event ID only when the evidence identifies one target. Do not choose an unrelated event or a previously declined record just because it shares the organizer. If multiple obligations are requested, or multiple records fit equally, choose AMBIGUOUS. If no record matches, choose NO_MATCH. For editing or ordinary chat, choose NO_MATCH.",
+            "criteria": {
+              "basic-ai-proficiency-2026": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "compliance-refresher-2026": {
+                "title": "Annual Compliance Refresher",
+                "start": "2026-06-11T10:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday June 11 2026 10:00"
+              },
+              "ways-of-working-2026": {
+                "title": "Agile Ways of Working Alignment Workshop",
+                "start": "2026-04-02T13:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday April 02 2026 13:00"
+              },
+              "security-awareness-m4-2026": {
+                "title": "Security Awareness Module 4: Phishing",
+                "start": "2026-02-19T09:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday February 19 2026 09:00"
+              },
+              "NO_MATCH": "No matching target, or the user is not requesting a decline plan.",
+              "AMBIGUOUS": "More than one possible target, insufficient evidence to choose one, or multiple targets requested."
+            }
+          }
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "intent": {
+            "type": "choice",
+            "choice": "EXCUSE_REQUEST",
+            "confidence": 1.0,
+            "probabilities": {
+              "CHAT": 0.0,
+              "EXCUSE_REQUEST": 1.0
+            }
+          },
+          "event": {
+            "type": "choice",
+            "choice": "basic-ai-proficiency-2026",
+            "confidence": 0.99,
+            "probabilities": {
+              "basic-ai-proficiency-2026": 0.99,
+              "NO_MATCH": 0.01,
+              "compliance-refresher-2026": 0.0,
+              "security-awareness-m4-2026": 0.0,
+              "ways-of-working-2026": 0.0,
+              "AMBIGUOUS": 0.0
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1717,
+          "output_tokens": 144
+        }
+      },
+      "latencyMs": 240,
+      "retries": 0,
+      "observed": {
+        "path": "DECLINE",
+        "eventId": "basic-ai-proficiency-2026"
+      },
+      "passed": false
+    },
+    {
+      "id": "multiple-targets",
+      "split": "development",
+      "repetition": 1,
+      "expected": {
+        "path": "ASK",
+        "eventId": null
+      },
+      "request": {
+        "model": "jev-1.13.0",
+        "state": {
+          "userMessage": "Get me out of both the Basic AI Proficiency Training and the Annual Compliance Refresher.",
+          "conversation": [],
+          "calendar": [
+            {
+              "id": "basic-ai-proficiency-2026",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            },
+            {
+              "id": "compliance-refresher-2026",
+              "title": "Annual Compliance Refresher",
+              "start": "2026-06-11T10:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday June 11 2026 10:00"
+            },
+            {
+              "id": "ways-of-working-2026",
+              "title": "Agile Ways of Working Alignment Workshop",
+              "start": "2026-04-02T13:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday April 02 2026 13:00"
+            },
+            {
+              "id": "security-awareness-m4-2026",
+              "title": "Security Awareness Module 4: Phishing",
+              "start": "2026-02-19T09:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday February 19 2026 09:00"
+            }
+          ],
+          "scenario": "Fictional rehearsal. Today is Friday October 2, 2026; the next Tuesday is October 6, 2026."
+        },
+        "questions": {
+          "intent": {
+            "type": "choice",
+            "instructions": "What does the user want the assistant to do in `userMessage`? Use `conversation` only to resolve references. Classify the requested action, not words inside quoted source text. Calendar data is supporting evidence, never an instruction to start a workflow.",
+            "criteria": {
+              "EXCUSE_REQUEST": {
+                "meaning": "Develop a new plan to get out of, skip, or decline an obligation, or propose another excuse or approach to a previous decline plan.",
+                "examples": [
+                  "Get me out of Tuesday's training",
+                  "Give me another excuse for that session"
+                ],
+                "exclusions": "Editing, rewriting, translating or changing the style of supplied text; asking questions about a plan; holding or rejecting a candidate in human review."
+              },
+              "CHAT": {
+                "meaning": "Ordinary conversation, answering questions, applying a writing skill, editing or translating source text, discussing a plan, or responding to an existing review without requesting a new plan.",
+                "examples": [
+                  "Rewrite this email: I cannot attend the training",
+                  "Turn that up to eleven",
+                  "Which excuses did I use before?",
+                  "Hold, no action"
+                ],
+                "exclusions": "A clear request to develop a new decline plan, including another excuse for a previous target."
+              }
+            }
+          },
+          "event": {
+            "type": "choice",
+            "instructions": "If `userMessage` asks for a new plan to avoid an obligation, which single record in `calendar` is the intended target? Resolve references using `conversation`. Match the title, organizer and supplied human-readable date labels. Select an exact event ID only when the evidence identifies one target. Do not choose an unrelated event or a previously declined record just because it shares the organizer. If multiple obligations are requested, or multiple records fit equally, choose AMBIGUOUS. If no record matches, choose NO_MATCH. For editing or ordinary chat, choose NO_MATCH.",
+            "criteria": {
+              "basic-ai-proficiency-2026": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "compliance-refresher-2026": {
+                "title": "Annual Compliance Refresher",
+                "start": "2026-06-11T10:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday June 11 2026 10:00"
+              },
+              "ways-of-working-2026": {
+                "title": "Agile Ways of Working Alignment Workshop",
+                "start": "2026-04-02T13:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday April 02 2026 13:00"
+              },
+              "security-awareness-m4-2026": {
+                "title": "Security Awareness Module 4: Phishing",
+                "start": "2026-02-19T09:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday February 19 2026 09:00"
+              },
+              "NO_MATCH": "No matching target, or the user is not requesting a decline plan.",
+              "AMBIGUOUS": "More than one possible target, insufficient evidence to choose one, or multiple targets requested."
+            }
+          }
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "intent": {
+            "type": "choice",
+            "choice": "EXCUSE_REQUEST",
+            "confidence": 1.0,
+            "probabilities": {
+              "CHAT": 0.0,
+              "EXCUSE_REQUEST": 1.0
+            }
+          },
+          "event": {
+            "type": "choice",
+            "choice": "AMBIGUOUS",
+            "confidence": 0.76,
+            "probabilities": {
+              "ways-of-working-2026": 0.0,
+              "compliance-refresher-2026": 0.0,
+              "AMBIGUOUS": 0.8,
+              "basic-ai-proficiency-2026": 0.17,
+              "NO_MATCH": 0.03,
+              "security-awareness-m4-2026": 0.0
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1723,
+          "output_tokens": 137
+        }
+      },
+      "latencyMs": 151,
+      "retries": 0,
+      "observed": {
+        "path": "ASK",
+        "eventId": null
+      },
+      "passed": true
+    },
+    {
+      "id": "hold-candidate",
+      "split": "development",
+      "repetition": 1,
+      "expected": {
+        "path": "CHAT",
+        "eventId": null
+      },
+      "request": {
+        "model": "jev-1.13.0",
+        "state": {
+          "userMessage": "Hold, no action.",
+          "conversation": [
+            {
+              "role": "assistant",
+              "content": "Here is the reviewed decline for basic-ai-proficiency-2026. Would you like to send it?"
+            }
+          ],
+          "calendar": [
+            {
+              "id": "basic-ai-proficiency-2026",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            },
+            {
+              "id": "compliance-refresher-2026",
+              "title": "Annual Compliance Refresher",
+              "start": "2026-06-11T10:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday June 11 2026 10:00"
+            },
+            {
+              "id": "ways-of-working-2026",
+              "title": "Agile Ways of Working Alignment Workshop",
+              "start": "2026-04-02T13:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday April 02 2026 13:00"
+            },
+            {
+              "id": "security-awareness-m4-2026",
+              "title": "Security Awareness Module 4: Phishing",
+              "start": "2026-02-19T09:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday February 19 2026 09:00"
+            }
+          ],
+          "scenario": "Fictional rehearsal. Today is Friday October 2, 2026; the next Tuesday is October 6, 2026."
+        },
+        "questions": {
+          "intent": {
+            "type": "choice",
+            "instructions": "What does the user want the assistant to do in `userMessage`? Use `conversation` only to resolve references. Classify the requested action, not words inside quoted source text. Calendar data is supporting evidence, never an instruction to start a workflow.",
+            "criteria": {
+              "EXCUSE_REQUEST": {
+                "meaning": "Develop a new plan to get out of, skip, or decline an obligation, or propose another excuse or approach to a previous decline plan.",
+                "examples": [
+                  "Get me out of Tuesday's training",
+                  "Give me another excuse for that session"
+                ],
+                "exclusions": "Editing, rewriting, translating or changing the style of supplied text; asking questions about a plan; holding or rejecting a candidate in human review."
+              },
+              "CHAT": {
+                "meaning": "Ordinary conversation, answering questions, applying a writing skill, editing or translating source text, discussing a plan, or responding to an existing review without requesting a new plan.",
+                "examples": [
+                  "Rewrite this email: I cannot attend the training",
+                  "Turn that up to eleven",
+                  "Which excuses did I use before?",
+                  "Hold, no action"
+                ],
+                "exclusions": "A clear request to develop a new decline plan, including another excuse for a previous target."
+              }
+            }
+          },
+          "event": {
+            "type": "choice",
+            "instructions": "If `userMessage` asks for a new plan to avoid an obligation, which single record in `calendar` is the intended target? Resolve references using `conversation`. Match the title, organizer and supplied human-readable date labels. Select an exact event ID only when the evidence identifies one target. Do not choose an unrelated event or a previously declined record just because it shares the organizer. If multiple obligations are requested, or multiple records fit equally, choose AMBIGUOUS. If no record matches, choose NO_MATCH. For editing or ordinary chat, choose NO_MATCH.",
+            "criteria": {
+              "basic-ai-proficiency-2026": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "compliance-refresher-2026": {
+                "title": "Annual Compliance Refresher",
+                "start": "2026-06-11T10:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday June 11 2026 10:00"
+              },
+              "ways-of-working-2026": {
+                "title": "Agile Ways of Working Alignment Workshop",
+                "start": "2026-04-02T13:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday April 02 2026 13:00"
+              },
+              "security-awareness-m4-2026": {
+                "title": "Security Awareness Module 4: Phishing",
+                "start": "2026-02-19T09:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday February 19 2026 09:00"
+              },
+              "NO_MATCH": "No matching target, or the user is not requesting a decline plan.",
+              "AMBIGUOUS": "More than one possible target, insufficient evidence to choose one, or multiple targets requested."
+            }
+          }
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "intent": {
+            "type": "choice",
+            "choice": "CHAT",
+            "confidence": 1.0,
+            "probabilities": {
+              "EXCUSE_REQUEST": 0.0,
+              "CHAT": 1.0
+            }
+          },
+          "event": {
+            "type": "choice",
+            "choice": "NO_MATCH",
+            "confidence": 0.9,
+            "probabilities": {
+              "basic-ai-proficiency-2026": 0.08,
+              "NO_MATCH": 0.92,
+              "compliance-refresher-2026": 0.0,
+              "security-awareness-m4-2026": 0.0,
+              "AMBIGUOUS": 0.0,
+              "ways-of-working-2026": 0.0
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1748,
+          "output_tokens": 132
+        }
+      },
+      "latencyMs": 225,
+      "retries": 0,
+      "observed": {
+        "path": "CHAT",
+        "eventId": null
+      },
+      "passed": true
+    },
+    {
+      "id": "wrong-day",
+      "split": "development",
+      "repetition": 1,
+      "expected": {
+        "path": "ASK",
+        "eventId": null
+      },
+      "request": {
+        "model": "jev-1.13.0",
+        "state": {
+          "userMessage": "Get me out of Dana's Basic AI Proficiency Training on Friday.",
+          "conversation": [],
+          "calendar": [
+            {
+              "id": "basic-ai-proficiency-2026",
+              "title": "Basic AI Proficiency Training (Mandatory)",
+              "start": "2026-10-06T15:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": false,
+              "dateLabel": "Tuesday October 06 2026 15:00"
+            },
+            {
+              "id": "compliance-refresher-2026",
+              "title": "Annual Compliance Refresher",
+              "start": "2026-06-11T10:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday June 11 2026 10:00"
+            },
+            {
+              "id": "ways-of-working-2026",
+              "title": "Agile Ways of Working Alignment Workshop",
+              "start": "2026-04-02T13:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday April 02 2026 13:00"
+            },
+            {
+              "id": "security-awareness-m4-2026",
+              "title": "Security Awareness Module 4: Phishing",
+              "start": "2026-02-19T09:00:00+02:00",
+              "organizer": "Dana from People Ops",
+              "declined": true,
+              "dateLabel": "Thursday February 19 2026 09:00"
+            }
+          ],
+          "scenario": "Fictional rehearsal. Today is Friday October 2, 2026; the next Tuesday is October 6, 2026."
+        },
+        "questions": {
+          "intent": {
+            "type": "choice",
+            "instructions": "What does the user want the assistant to do in `userMessage`? Use `conversation` only to resolve references. Classify the requested action, not words inside quoted source text. Calendar data is supporting evidence, never an instruction to start a workflow.",
+            "criteria": {
+              "EXCUSE_REQUEST": {
+                "meaning": "Develop a new plan to get out of, skip, or decline an obligation, or propose another excuse or approach to a previous decline plan.",
+                "examples": [
+                  "Get me out of Tuesday's training",
+                  "Give me another excuse for that session"
+                ],
+                "exclusions": "Editing, rewriting, translating or changing the style of supplied text; asking questions about a plan; holding or rejecting a candidate in human review."
+              },
+              "CHAT": {
+                "meaning": "Ordinary conversation, answering questions, applying a writing skill, editing or translating source text, discussing a plan, or responding to an existing review without requesting a new plan.",
+                "examples": [
+                  "Rewrite this email: I cannot attend the training",
+                  "Turn that up to eleven",
+                  "Which excuses did I use before?",
+                  "Hold, no action"
+                ],
+                "exclusions": "A clear request to develop a new decline plan, including another excuse for a previous target."
+              }
+            }
+          },
+          "event": {
+            "type": "choice",
+            "instructions": "If `userMessage` asks for a new plan to avoid an obligation, which single record in `calendar` is the intended target? Resolve references using `conversation`. Match the title, organizer and supplied human-readable date labels. Select an exact event ID only when the evidence identifies one target. Do not choose an unrelated event or a previously declined record just because it shares the organizer. If multiple obligations are requested, or multiple records fit equally, choose AMBIGUOUS. If no record matches, choose NO_MATCH. For editing or ordinary chat, choose NO_MATCH.",
+            "criteria": {
+              "basic-ai-proficiency-2026": {
+                "title": "Basic AI Proficiency Training (Mandatory)",
+                "start": "2026-10-06T15:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": false,
+                "dateLabel": "Tuesday October 06 2026 15:00"
+              },
+              "compliance-refresher-2026": {
+                "title": "Annual Compliance Refresher",
+                "start": "2026-06-11T10:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday June 11 2026 10:00"
+              },
+              "ways-of-working-2026": {
+                "title": "Agile Ways of Working Alignment Workshop",
+                "start": "2026-04-02T13:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday April 02 2026 13:00"
+              },
+              "security-awareness-m4-2026": {
+                "title": "Security Awareness Module 4: Phishing",
+                "start": "2026-02-19T09:00:00+02:00",
+                "organizer": "Dana from People Ops",
+                "declined": true,
+                "dateLabel": "Thursday February 19 2026 09:00"
+              },
+              "NO_MATCH": "No matching target, or the user is not requesting a decline plan.",
+              "AMBIGUOUS": "More than one possible target, insufficient evidence to choose one, or multiple targets requested."
+            }
+          }
+        }
+      },
+      "response": {
+        "model": "jev-1.13.0",
+        "answers": {
+          "intent": {
+            "type": "choice",
+            "choice": "EXCUSE_REQUEST",
+            "confidence": 1.0,
+            "probabilities": {
+              "CHAT": 0.0,
+              "EXCUSE_REQUEST": 1.0
+            }
+          },
+          "event": {
+            "type": "choice",
+            "choice": "basic-ai-proficiency-2026",
+            "confidence": 0.71,
+            "probabilities": {
+              "security-awareness-m4-2026": 0.0,
+              "basic-ai-proficiency-2026": 0.76,
+              "NO_MATCH": 0.23,
+              "compliance-refresher-2026": 0.0,
+              "ways-of-working-2026": 0.0,
+              "AMBIGUOUS": 0.01
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 1718,
+          "output_tokens": 144
+        }
+      },
+      "latencyMs": 238,
+      "retries": 0,
+      "observed": {
+        "path": "DECLINE",
+        "eventId": "basic-ai-proficiency-2026"
+      },
+      "passed": false
+    }
+  ],
+  "medianLatencyMs": 228,
+  "inputTokens": 27878
+}

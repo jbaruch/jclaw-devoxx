@@ -30,7 +30,9 @@ import kotlin.time.Duration.Companion.seconds
  * subgraph and node, Gemini model calls with their messages and reported token
  * counts, and tools invoked through Koog. Subscription CLI stages are node spans
  * with typed input/output and provider metadata; they do not report token prices.
- * Human confirmation, delivery and memory writes happen outside the agent trace.
+ * Jev's decision call is its own native node inside routeAndIdentify. Calendar
+ * reads and request assembly are application spans; humanCritic is a graph node.
+ * Delivery and confirmed memory writes happen after the agent result.
  *
  * The attributes below ride on EVERY span, which is what Langfuse asks of
  * OpenTelemetry instrumentation: one session per ./jclaw process, so the Sessions
@@ -166,6 +168,45 @@ internal fun withLangfuseNodeDetails(span: SpanData): SpanData {
                     put("langfuse.observation.metadata.application_prompt", CliCritic.codexPrompt(DeclineReview(request, it.plan)))
                 }
                 put("langfuse.observation.metadata.review_attempt", it.refinements + 1)
+            }
+        }
+        if (node in setOf("readCalendar", "assembleRequest")) {
+            put("langfuse.observation.metadata.client", "application")
+            put("langfuse.observation.metadata.role", if (node == "readCalendar") "calendar-context" else "request-assembly")
+        }
+        if (node == "jevDecision") {
+            put("langfuse.observation.type", "GENERATION")
+            put("gen_ai.operation.name", "decision")
+            put("gen_ai.provider.name", "typesafe")
+            put("gen_ai.request.model", jclaw.domain.JevProtocol.model)
+            put("langfuse.observation.metadata.role", "bounded-decision")
+            put("langfuse.observation.metadata.client", "ktor")
+            val context = (span.attributes["koog.node.input"] as? String)?.let {
+                runCatching { jclaw.domain.JevProtocol.json.decodeFromString<DecisionContext>(it) }.getOrNull()
+            }
+            context?.let { put("langfuse.observation.input", it.payload.toString()) }
+            val evaluation = (span.attributes["koog.node.output"] as? String)?.let {
+                runCatching { jclaw.domain.JevProtocol.json.decodeFromString<DecisionEvaluation>(it) }.getOrNull()
+            }
+            evaluation?.let {
+                put("langfuse.observation.output", jclaw.domain.JevProtocol.json.encodeToString(it.response))
+                put("gen_ai.response.model", it.response.model)
+                put("langfuse.observation.model.name", it.response.model)
+                put("langfuse.observation.metadata.path", it.decision.path.name)
+                it.decision.eventId?.let { eventId -> put("langfuse.observation.metadata.event_id", eventId) }
+                put("langfuse.observation.metadata.call_latency_ms", it.elapsedMs)
+                put("langfuse.observation.metadata.event_answer_used", it.decision.path != jclaw.domain.DecisionPath.CHAT)
+                it.response.answers.forEach { (name, answer) ->
+                    put("langfuse.observation.metadata.$name.choice", answer.choice)
+                    put("langfuse.observation.metadata.$name.confidence", answer.confidence)
+                    val sorted = answer.probabilities.values.sortedDescending()
+                    put("langfuse.observation.metadata.$name.margin", sorted.first() - sorted.getOrElse(1) { 0.0 })
+                    answer.probabilities.forEach { (option, probability) ->
+                        put("langfuse.observation.metadata.$name.probability.$option", probability)
+                    }
+                }
+                it.response.usage["input_tokens"]?.let { count -> put("gen_ai.usage.input_tokens", count.toLong()) }
+                it.response.usage["output_tokens"]?.let { count -> put("gen_ai.usage.output_tokens", count.toLong()) }
             }
         }
     }

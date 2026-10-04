@@ -57,15 +57,18 @@ class PortBridgeTest : StringSpec({
     "invalid unavailable exhausted and noncanonical reviews cannot issue a delivery token" {
         portFixture { bridge, _ ->
             listOf(null, JsonPrimitive("malformed"), buildJsonObject { put("approved", true) }).forEach { critique ->
-                bridge.review(PortReviewInput(portRequest, portPlan, critique, workflowRunId = "run-1")).route shouldBe ReviewRoute.BLOCK
+                val blocked = bridge.review(PortReviewInput(portRequest, portPlan, critique, workflowRunId = "run-1"))
+                blocked.route shouldBe ReviewRoute.BLOCK
+                blocked.feedback shouldContain "Port Judge returned no valid verdict"
             }
             val rejected = portVerdict.copy(approved = false, feedback = "Unsupported reason")
             val initial = bridge.review(PortReviewInput(portRequest, portPlan, portJson.encodeToJsonElement(rejected), 0, "run-1"))
             initial.route shouldBe ReviewRoute.REFINE
             initial.reviewToken shouldBe null
-            val exhausted = bridge.review(PortReviewInput(portRequest, portPlan, portJson.encodeToJsonElement(rejected), 2, "run-1"))
+            val exhausted = bridge.review(PortReviewInput(portRequest, portPlan, portJson.encodeToJsonElement(rejected), 6, "run-1"))
             exhausted.route shouldBe ReviewRoute.BLOCK
             exhausted.reviewToken shouldBe null
+            exhausted.feedback shouldContain "Port Judge rejected the plan after 6 refinements"
             shouldThrow<IllegalArgumentException> { bridge.review(PortReviewInput(portRequest.copy(organizerName = "Dana"), portPlan,
                 portJson.encodeToJsonElement(portVerdict), 0, "run-1")) }
         }
@@ -84,6 +87,48 @@ class PortBridgeTest : StringSpec({
             delivered.receipt.callId shouldBe reviewed.prepared.send.callId
             delivered.sentFact.message shouldBe portPlan.messageToOrganizer
             bridge.deliver(input) shouldBe delivered
+        }
+    }
+    "Port human critic preserves the request and uses the same global refinement budget" {
+        portFixture { bridge, attempts ->
+            val reviewed = bridge.review(PortReviewInput(portRequest, portPlan,
+                portJson.encodeToJsonElement(portVerdict), refinements = 1, workflowRunId = "run-1"))
+            val approved = reviewed.approval()
+            val rejected = PortHumanReviewInput(approved.reviewToken, approved.candidateId,
+                "reject", "reject", approved.submittedBy, approved.workflowRunId, "Use another reason")
+            val result = bridge.humanReview(rejected)
+            result.route shouldBe ReviewRoute.REFINE
+            result.reviewToken shouldBe null
+            val request = requireNotNull(result.refinement).request
+            request.eventId shouldBe portRequest.eventId
+            request.organizerName shouldBe portRequest.organizerName
+            request.recentlyUsedFlavors shouldBe portRequest.recentlyUsedFlavors
+            request.userInstruction shouldBe portRequest.userInstruction + "\nHuman feedback: Use another reason"
+            request.previouslyProposedFlavors shouldBe portRequest.previouslyProposedFlavors
+            result.refinement.plan shouldBe portPlan
+            val final = bridge.review(PortReviewInput(request, portPlan,
+                portJson.encodeToJsonElement(portVerdict), refinements = 6, workflowRunId = "run-1"))
+            val finalApproval = final.approval()
+            val blocked = bridge.humanReview(rejected.copy(reviewToken = finalApproval.reviewToken,
+                candidateId = finalApproval.candidateId))
+            blocked.route shouldBe ReviewRoute.BLOCK
+            blocked.feedback shouldContain "Human rejected the plan after 6 refinements"
+            blocked.refinement shouldBe null
+            attempts.claim(requireNotNull(reviewed.prepared).send.callId) shouldBe true
+        }
+    }
+    "human feedback must attest the signed exact candidate and workflow run" {
+        portFixture { bridge, attempts ->
+            val ready = bridge.prepared()
+            val input = ready.approval()
+            val rejection = PortHumanReviewInput(input.reviewToken, input.candidateId,
+                "reject", "reject", input.submittedBy, input.workflowRunId, "Change it")
+            listOf(rejection.copy(selectedOutlet = "approve"), rejection.copy(buttonIdentifier = "hold"),
+                rejection.copy(submittedBy = ""), rejection.copy(candidateId = "wrong-candidate"),
+                rejection.copy(workflowRunId = "wrong-run")).forEach {
+                shouldThrow<IllegalArgumentException> { bridge.humanReview(it) }
+            }
+            attempts.claim(requireNotNull(ready.prepared).send.callId) shouldBe true
         }
     }
     "failed or mismatched delivery does not return a sent fact and is never automatically retried" {
@@ -141,6 +186,7 @@ class PortBridgeTest : StringSpec({
                 listing.bodyAsText() shouldNotContain "sendDecline"
                 val forbidden = client.post("/deliver") { bearerAuth(portReadToken) }
                 forbidden.status shouldBe HttpStatusCode.Unauthorized
+                client.post("/review/human") { bearerAuth(portReadToken) }.status shouldBe HttpStatusCode.Unauthorized
                 val hiddenTool = client.post("/mcp") {
                     bearerAuth(portReadToken); contentType(ContentType.Application.Json)
                     setBody("""{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"sendDecline","arguments":{}}}""")

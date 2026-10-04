@@ -36,7 +36,7 @@ class NativeWorkflowTest : StringSpec({
         llmModel = Models.flash,
         systemPrompt = "Fixture-only deterministic execution; no external tools.",
         maxIterations = 200,
-        strategy = nativeWorkflow(Models.flash, Models.flash),
+        strategy = nativeWorkflow(Models.flash, Models.flash, maxRefinements = 2),
     )
 
     "native verification approves the exact revised candidate and carries current constraints" {

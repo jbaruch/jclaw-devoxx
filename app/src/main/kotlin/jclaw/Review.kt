@@ -14,7 +14,11 @@ data class ReviewAttempt(
 )
 
 @Serializable
-enum class ReviewRoute { APPROVE, REFINE, BLOCK }
+enum class ReviewRoute { APPROVE, REFINE, BLOCK, HOLD }
+
+enum class CriticSource(val title: String) { CODEX("Codex"), PORT_JUDGE("Port Judge"), HUMAN("Human") }
+
+data class CriticVerdict(val approved: Boolean, val feedback: String, val source: CriticSource)
 
 @Serializable
 data class ReviewDecision(
@@ -27,12 +31,19 @@ data class ReviewDecision(
 fun reviewDecision(
     attempt: ReviewAttempt,
     critique: DeclineCritique?,
-    maxRefinements: Int = 2,
-): ReviewDecision = when {
-    critique == null -> ReviewDecision(attempt, ReviewRoute.BLOCK, "Codex returned no valid verdict. Nothing can be sent.")
-    critique.approved -> ReviewDecision(attempt, ReviewRoute.APPROVE, critique.feedback, critique)
-    attempt.refinements < maxRefinements -> ReviewDecision(attempt, ReviewRoute.REFINE, critique.feedback, critique)
-    else -> ReviewDecision(attempt, ReviewRoute.BLOCK, "Codex rejected the plan after $maxRefinements refinements: ${critique.feedback}", critique)
+    maxRefinements: Int = jclaw.domain.WorkflowPolicy.maxRefinements,
+    source: CriticSource = CriticSource.CODEX,
+): ReviewDecision = if (critique == null) {
+    ReviewDecision(attempt, ReviewRoute.BLOCK, "${source.title} returned no valid verdict. Nothing can be sent.")
+} else reviewDecision(attempt, CriticVerdict(critique.approved, critique.feedback, source), maxRefinements)
+    .copy(critique = critique)
+
+/** Both critics spend the same request-scoped refinement budget. */
+fun reviewDecision(attempt: ReviewAttempt, verdict: CriticVerdict, maxRefinements: Int = jclaw.domain.WorkflowPolicy.maxRefinements): ReviewDecision = when {
+    verdict.approved -> ReviewDecision(attempt, ReviewRoute.APPROVE, verdict.feedback)
+    attempt.refinements < maxRefinements -> ReviewDecision(attempt, ReviewRoute.REFINE, verdict.feedback)
+    else -> ReviewDecision(attempt, ReviewRoute.BLOCK,
+        "${verdict.source.title} rejected the plan after $maxRefinements refinements: ${verdict.feedback}")
 }
 
 enum class PipelineStageState { STARTED, COMPLETED, FAILED }

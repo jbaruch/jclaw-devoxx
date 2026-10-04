@@ -10,6 +10,7 @@ import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import jclaw.domain.DeclineReceipt
 import jclaw.domain.DeclineRequest
+import jclaw.domain.CalendarRecord
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -46,12 +47,16 @@ class Mcp private constructor(
     }
 
     /** Resolve identity from the selected calendar record before review and human approval. */
-    suspend fun canonicalRequest(request: DeclineRequest): DeclineRequest {
+    suspend fun calendar(): List<CalendarRecord> {
         val result = requireNotNull(call("calendar-mcp", "getCalendar", emptyMap())) { "Calendar returned no result" }
         check(result.isError != true) { "Calendar lookup failed" }
         val payload = result.structuredContent?.toString() ?: result.content.filterIsInstance<TextContent>()
             .singleOrNull()?.text ?: error("Calendar returned no unambiguous event list")
-        val target = calendarJson.decodeFromString<List<CalendarTarget>>(payload)
+        return calendarJson.decodeFromString<List<CalendarRecord>>(payload)
+    }
+
+    suspend fun canonicalRequest(request: DeclineRequest): DeclineRequest {
+        val target = calendar()
             .singleOrNull { it.id == request.eventId } ?: error("Selected event is absent or ambiguous on the calendar")
         check(target.organizer.isNotBlank()) { "Selected event has no organizer" }
         return request.copy(organizerName = target.organizer)
@@ -130,6 +135,3 @@ class Mcp private constructor(
         }
     }
 }
-
-@Serializable
-private data class CalendarTarget(val id: String, val organizer: String)

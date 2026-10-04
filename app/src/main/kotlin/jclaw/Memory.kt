@@ -29,6 +29,7 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import jclaw.domain.ExcuseFlavor
 
 /**
  * j-claw's memory is a directory.
@@ -49,6 +50,17 @@ class Memory private constructor(
 
     /** Retrieval runs before every LLM call; the trace says so once, not once per tool round-trip. */
     private var lastTraced: String? = null
+
+    /** Exact lookup in confirmed story headers; calendar flags do not explain an excuse. */
+    fun usedFlavors(organizer: String): List<ExcuseFlavor> {
+        val header = Regex("^\\d{4}-\\d{2}-\\d{2}: Declined .*?, run by (.*?)\\. Excuse flavor used: ([A-Z_]+)\\.")
+        val facts = root.resolve("documents").listDirectoryEntries().filter { it.isRegularFile() && !it.name.startsWith(".") }
+            .mapNotNull { header.find(it.readText()) }
+            .filter { it.groupValues[1] == organizer }
+            .map { ExcuseFlavor.valueOf(it.groupValues[2]) }.distinct()
+        trace("  <- memory: confirmed history for $organizer: ${facts.joinToString()}")
+        return facts
+    }
 
     override suspend fun search(request: SearchRequest, namespace: String?): List<SearchResult<TextDocument>> {
         require(request is SimilaritySearchRequest) { "memory answers similarity searches only, not $request" }

@@ -1,0 +1,28 @@
+{
+  "identifier": "jclaw-demo",
+  "title": "j-claw",
+  "icon": "Apps",
+  "visibility": "org",
+  "description": "Ask j-claw to get you out of training, then review its proposal.",
+  "widgets": [
+    {
+      "id": "jclaw-chat",
+      "type": "ai-agent",
+      "title": "Ask j-claw",
+      "description": "Tell j-claw which training you want to skip and what it should consider.",
+      "agentIdentifier": "jclaw",
+      "useMCP": true
+    }
+  ],
+  "layout": [
+    {
+      "height": 400,
+      "columns": [
+        {
+          "id": "jclaw-chat",
+          "size": 12
+        }
+      ]
+    }
+  ]
+}

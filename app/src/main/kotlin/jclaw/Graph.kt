@@ -30,8 +30,16 @@ fun main(args: Array<String>): Unit = runBlocking {
     require(args.isEmpty()) { "Usage: graph [native]" }
     Mcp.boot("calendar-mcp", "organizer-mcp").use { mcp ->
         val strategy = jclawStrategy(
-            mcp = mcp,
-            naive = false,
+            readTools = Slices(mcp.registry).read, naive = false,
+            draft = { error("Graph export never calls Claude") },
+            refinePlan = { error("Graph export never calls Claude") },
+            judgePlan = { error("Graph export never calls Codex") },
+            humanReview = { error("Graph export never executes the human critic") },
+            decisionStages = if (System.getenv("JCLAW_DECIDER") == "gemini") null else object : DecisionStages {
+                override suspend fun context(input: String, messages: List<ai.koog.prompt.message.Message>): DecisionContext = error("Graph export never reads context")
+                override suspend fun evaluate(context: DecisionContext): DecisionEvaluation = error("Graph export never calls Jev")
+                override suspend fun assemble(evaluation: DecisionEvaluation): RoutedInput = error("Graph export never assembles a request")
+            },
         )
         val diagram = strategy.asMermaidDiagram()
         val out = File(System.getProperty("jclaw.graph.out") ?: "pipeline.mmd")

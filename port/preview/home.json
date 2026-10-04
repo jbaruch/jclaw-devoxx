@@ -1,0 +1,143 @@
+{
+  "identifier": "$home",
+  "title": "Home",
+  "visibility": "org",
+  "widgets": [
+    {
+      "id": "jclaw-home-workflow",
+      "type": "workflow-card-widget",
+      "title": "j-claw workflow",
+      "icon": "Code",
+      "description": "Identify → Draft → Judge → Human review. Either critic can request refinement.",
+      "items": [
+        {
+          "workflowIdentifier": "jclaw_decline",
+          "triggerIdentifier": "trigger"
+        }
+      ]
+    },
+    {
+      "id": "jclaw-home-agents",
+      "type": "table-entities-explorer",
+      "title": "Workflow agents",
+      "icon": "Code",
+      "blueprint": "_ai_agent",
+      "displayMode": "widget",
+      "dataset": {
+        "combinator": "and",
+        "rules": [
+          {
+            "property": "$identifier",
+            "operator": "in",
+            "value": [
+              "jclaw-identify",
+              "jclaw-draft-refine",
+              "jclaw-judge"
+            ]
+          }
+        ]
+      },
+      "blueprintConfig": {
+        "_ai_agent": {
+          "propertiesSettings": {
+            "shown": [
+              "$title",
+              "model"
+            ],
+            "order": [
+              "$title",
+              "model"
+            ]
+          },
+          "sortSettings": {
+            "sortBy": [
+              {
+                "property": "$title",
+                "order": "asc"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "jclaw-home-skills",
+      "type": "table-entities-explorer",
+      "title": "j-claw skills",
+      "icon": "Learn",
+      "blueprint": "skill",
+      "displayMode": "widget",
+      "dataset": {
+        "combinator": "and",
+        "rules": [
+          {
+            "property": "$identifier",
+            "operator": "in",
+            "value": [
+              "jclaw-corporate-speak",
+              "jclaw-decline-review"
+            ]
+          }
+        ]
+      },
+      "blueprintConfig": {
+        "skill": {
+          "propertiesSettings": {
+            "shown": [
+              "$title",
+              "description"
+            ],
+            "order": [
+              "$title",
+              "description"
+            ]
+          },
+          "sortSettings": {
+            "sortBy": [
+              {
+                "property": "$title",
+                "order": "asc"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "jclaw-home-chat",
+      "type": "ai-agent",
+      "title": "Ask j-claw",
+      "description": "Tell j-claw which training you want to skip and what it should consider.",
+      "agentIdentifier": "jclaw",
+      "useMCP": true
+    }
+  ],
+  "layout": [
+    {
+      "height": 400,
+      "columns": [
+        {
+          "id": "jclaw-home-workflow",
+          "size": 4
+        },
+        {
+          "id": "jclaw-home-chat",
+          "size": 8
+        }
+      ]
+    },
+    {
+      "height": 400,
+      "columns": [
+        {
+          "id": "jclaw-home-agents",
+          "size": 6
+        },
+        {
+          "id": "jclaw-home-skills",
+          "size": 6
+        }
+      ]
+    }
+  ]
+}

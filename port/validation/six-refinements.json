@@ -1,0 +1,159 @@
+{
+  "checkedAt": "2026-10-02T15:48:55.505809-05:00",
+  "mode": "MOCK ONLY",
+  "workflowIdentifier": "jclaw_decline",
+  "workflowRunId": "wfr_zJUi8df41Svu5xK0",
+  "workflowVersionIdentifier": "wfv_1tt54bX3umT4jFrv",
+  "status": "COMPLETED",
+  "startedAt": "2026-10-02T20:28:07.252Z",
+  "completedAt": "2026-10-02T20:47:04.205Z",
+  "elapsedSeconds": 1136.953,
+  "modelNodeElapsedSecondsSum": 425.423,
+  "timingScope": "Includes browser navigation, inspection and agent-operated human review waits; not a five-minute stage rehearsal or framework benchmark.",
+  "policy": {
+    "maxRefinements": 6,
+    "maxCandidates": 7
+  },
+  "launch": {
+    "surface": "Home Ask j-claw widget",
+    "agent": "jclaw",
+    "tools": [
+      "list_self_service_triggers",
+      "trigger_run"
+    ],
+    "triggerCalls": 1,
+    "initialRequestPreservedVerbatim": true
+  },
+  "initialRequest": "Get me out of the Basic AI Proficiency Training on Tuesday, run by Dana from People Ops. Don't reuse an excuse I've already used on her - tell me which ones you're avoiding.",
+  "historyBefore": {
+    "count": 4,
+    "avoidedFlavors": [
+      "FAMILY_OBLIGATION",
+      "CALENDAR_CONFLICT",
+      "CUSTOMER_ESCALATION",
+      "ALREADY_PROFICIENT"
+    ],
+    "priorConfirmedSendRetained": true
+  },
+  "scenarioAmendment": "At the third human rejection, Codex explicitly supplied a separate fictional Tuesday-afternoon preparation/submission deadline. The accepted result depends on that added rehearsal fact; it is not evidence that the original request alone yielded an acceptable fresh excuse.",
+  "reviewActor": "Codex operated native browser INPUT controls as explicitly authorized for this mock rehearsal. No real organizer was contacted.",
+  "qualityFinding": "Judge rejected a mislabeled calendar conflict initially, then accepted the same conference clash as DEADLINE. Human rejected that interpretation and clarified a separate preparation deadline. Semantic excuse reuse is not proved safe by enum labels or an approved model verdict.",
+  "models": {
+    "entry": "claude-sonnet-4-6",
+    "identify": "claude-sonnet-4-6",
+    "draftRefine": "claude-opus-4-6",
+    "judge": "gpt-5",
+    "jevUsed": false
+  },
+  "nodeCounts": {
+    "identify": 1,
+    "refine": 6,
+    "judge": 7,
+    "human": 5,
+    "deliver": 1,
+    "remember": 1
+  },
+  "reviews": [
+    {
+      "candidate": 1,
+      "refinementsUsed": 0,
+      "flavor": "DEADLINE",
+      "judgeApproved": false,
+      "applicationRoute": "REFINE"
+    },
+    {
+      "candidate": 2,
+      "refinementsUsed": 1,
+      "flavor": "DEADLINE",
+      "judgeApproved": true,
+      "applicationRoute": "APPROVE",
+      "humanDecision": "reject",
+      "candidateId": "1cf460bdf102ae7d40b425d76b36e30329ada1d75c82e70c92c4be2c9462402e",
+      "humanFeedback": "Make the email shorter and more direct. Keep the conference-delivery commitment, but remove the unsupported 'published months ago' detail from the hallway script. Do not invent any new obligations or use the already-proficient reason."
+    },
+    {
+      "candidate": 3,
+      "refinementsUsed": 2,
+      "flavor": "DEADLINE",
+      "judgeApproved": true,
+      "applicationRoute": "APPROVE",
+      "humanDecision": "reject",
+      "candidateId": "fb9c1ff9b7ff7d7cfb04e5102d928cf91f12ebf494c1bc8309fa1ae485254a11",
+      "humanFeedback": "Use one compact paragraph for the organizer message, plus greeting and signature. Make the hallway script at most two sentences. Remove 'can't reschedule'; it is not a supplied fact. Keep the conference-delivery commitment and the request for materials."
+    },
+    {
+      "candidate": 4,
+      "refinementsUsed": 3,
+      "flavor": "DEADLINE",
+      "judgeApproved": false,
+      "applicationRoute": "REFINE"
+    },
+    {
+      "candidate": 5,
+      "refinementsUsed": 4,
+      "flavor": "DEADLINE",
+      "judgeApproved": true,
+      "applicationRoute": "APPROVE",
+      "humanDecision": "reject",
+      "candidateId": "d07ed2b8d068090542cac074e47f618f800b15adc6df8bcf88bdccc80125ce32",
+      "humanFeedback": "A conference attendance clash is still CALENDAR_CONFLICT; my earlier feedback does not override the avoid list. For this fictional rehearsal, here is a separate new fact: the demo code and talk materials must be finalized by a Tuesday-afternoon submission deadline. Use that preparation/delivery deadline (DEADLINE), not the simultaneous speaking slot, as the reason. Keep both scripts concise and the hallway script to two sentences. Do not invent any further facts."
+    },
+    {
+      "candidate": 6,
+      "refinementsUsed": 5,
+      "flavor": "DEADLINE",
+      "judgeApproved": true,
+      "applicationRoute": "APPROVE",
+      "humanDecision": "reject",
+      "candidateId": "3478729d094b81f5574dc7cde49c7ca734ea35d5f95f50f25f0b707f522c4095",
+      "humanFeedback": "One final wording change: replace 'hard Tuesday-afternoon submission deadline' with 'Tuesday-afternoon submission deadline' in the organizer message, and replace 'Would it be possible to get' with 'Could you share'. Preserve the separate preparation deadline and all prior constraints."
+    },
+    {
+      "candidate": 7,
+      "refinementsUsed": 6,
+      "flavor": "DEADLINE",
+      "judgeApproved": true,
+      "applicationRoute": "APPROVE",
+      "humanDecision": "approve",
+      "candidateId": "443de5ecf68958c869f45cc103928cb628e930fc32d0c36fd9ccca63c8f39969"
+    }
+  ],
+  "approvedPlan": {
+    "fakeCalendarEventId": null,
+    "flavor": "DEADLINE",
+    "hallwayScript": "I have a Tuesday-afternoon submission deadline for my conference demo code and talk materials, so I can't make the training. Could you share the materials or a recording afterward?",
+    "messageToOrganizer": "Hi Dana,\n\nI have a Tuesday-afternoon submission deadline to finalize the demo code and talk materials for an upcoming conference presentation, so I won't be able to attend the Basic AI Proficiency Training. Could you share the materials or a recording so I can catch up on my own?\n\nThanks,\nBaruch"
+  },
+  "delivery": {
+    "receipt": {
+      "delivered": true,
+      "callId": "ec63a44a-36ee-438c-a0ae-ae90905abaf1",
+      "candidateId": "443de5ecf68958c869f45cc103928cb628e930fc32d0c36fd9ccca63c8f39969",
+      "eventId": "basic-ai-proficiency-2026",
+      "organizerName": "Dana from People Ops",
+      "deliveredAt": "2026-10-02T15:47:02.898965-05:00"
+    },
+    "sentFact": {
+      "eventId": "basic-ai-proficiency-2026",
+      "organizerName": "Dana from People Ops",
+      "flavor": "DEADLINE",
+      "message": "Hi Dana,\n\nI have a Tuesday-afternoon submission deadline to finalize the demo code and talk materials for an upcoming conference presentation, so I won't be able to attend the Basic AI Proficiency Training. Could you share the materials or a recording so I can catch up on my own?\n\nThanks,\nBaruch",
+      "deliveredAt": "2026-10-02T15:47:02.898965-05:00"
+    }
+  },
+  "catalog": {
+    "beforeCount": 4,
+    "afterCount": 5,
+    "newRecords": 1,
+    "retainedExistingRecords": true,
+    "entityIdentifier": "jclaw-send-ec63a44a-36ee-438c-a0ae-ae90905abaf1",
+    "exactApprovedMessageAndReceiptMatched": true
+  },
+  "preflight": "PASS: deployed graph, four agents, seeds, skills, published two-tool MCP connector and bridge policy match",
+  "limitations": [
+    "Rejection at candidate seven was visible as Reject \u2014 block (limit reached), but was not selected in this successful run.",
+    "Current-bound native Hold and failed-receipt failure-path rehearsals remain separate; older Hold evidence is preserved.",
+    "Temporary Cloudflare tunnel remains; stable hosting and a timed stage rehearsal are still required.",
+    "After this run DEADLINE is also used for Dana. Do not repeatedly send the same baseline request expecting the same result or silently clear history."
+  ]
+}

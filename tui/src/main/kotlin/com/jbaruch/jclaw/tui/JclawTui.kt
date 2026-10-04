@@ -36,6 +36,7 @@ class JclawTui(
     private val title: String = "j-claw",
     private val features: List<String> = emptyList(),
     private val flow: List<String> = emptyList(),
+    private val candidateLimit: Int = 7,
     private val mode: String = "KOOG / DEVOXX",
     private val reviewOnly: Boolean = false,
     private val telemetryEnabled: Boolean = false,
@@ -61,6 +62,7 @@ class JclawTui(
     private var skillReads = 0
     private var savedFacts = 0
     private var candidate: CandidateView? = null
+    private var decisionLines: List<String> = emptyList()
     private var verdict = "Not reviewed"
     private var feedback = ""
     private var human = if (reviewOnly) "Disabled in workflow round" else "Not asked"
@@ -146,6 +148,7 @@ class JclawTui(
         toolCalls = 0
         skillReads = 0
         candidate = null
+        decisionLines = emptyList()
         candidateList.selected(0)
         evidenceList.selected(0)
         verdict = "Not reviewed"
@@ -155,7 +158,7 @@ class JclawTui(
         receiptId = null
         memoryStatus = "No new sent fact"
         outcome = DemoOutcome.RUNNING
-        outcomeDetail = "Gemini identifies the request; Claude drafts; Codex reviews"
+        outcomeDetail = "Identify the request; Claude drafts; Codex reviews"
     }
 
     fun outcome(state: DemoOutcome, detail: String = "") = onRenderThread {
@@ -179,10 +182,13 @@ class JclawTui(
         verdict = "Awaiting Codex"
         feedback = ""
         outcome = DemoOutcome.REVIEWING
-        outcomeDetail = "Review ${value.attempt}/3 · current request and exact proposed message"
+        outcomeDetail = "Review ${value.attempt}/$candidateLimit · current request and exact proposed message"
     }
 
     fun candidateIdentity(id: String) = onRenderThread { candidate = candidate?.copy(candidateId = id) }
+
+    /** Actual decision-model answers and measured latency, supplied by either framework. */
+    fun decision(lines: List<String>) = onRenderThread { decisionLines = lines.toList() }
 
     fun reviewResult(approved: Boolean, reason: String) = onRenderThread {
         verdict = if (approved) "APPROVED" else "REJECTED"
@@ -310,13 +316,19 @@ class JclawTui(
             cells += gap()
             if (item in CONNECTORS) cells += text(item).fg(Color.CYAN).constraint(Constraint.length(CharWidth.of(item)))
             else {
+                val label = when (item) {
+                    "readCalendar" -> "calendar"
+                    "jevDecision" -> "Jev"
+                    "assembleRequest" -> "identify"
+                    else -> item
+                }
                 val (mark, color) = when (stageStates[item]) {
                     StageState.ACTIVE -> "●" to Color.YELLOW
                     StageState.DONE -> "✓" to Color.GREEN
                     StageState.FAILED -> "✘" to Color.RED
                     else -> "·" to Color.CYAN
                 }
-                cells += text("$item $mark").fg(color).bold().constraint(Constraint.length(CharWidth.of(item) + 2))
+                cells += text("$label $mark").fg(color).bold().constraint(Constraint.length(CharWidth.of(label) + 2))
             }
         }
         if (width < 105) {
@@ -335,7 +347,12 @@ class JclawTui(
     } ?: 0
     private fun evidenceText(): String = buildString {
         appendLine("TURN $turn · ${elapsedSeconds()}s · agent tool calls $toolCalls · skill reads $skillReads")
-        appendLine("Review: $verdict · attempt ${candidate?.attempt ?: 0}/3")
+        if (decisionLines.isNotEmpty()) {
+            appendLine("DECISION MODEL")
+            decisionLines.forEach { appendLine(it) }
+            appendLine()
+        }
+        appendLine("Review: $verdict · candidate ${candidate?.attempt ?: 0}/$candidateLimit")
         appendLine("Human: $human")
         appendLine("Delivery: $delivery")
         appendLine("Memory: $memoryStatus · saved this session: $savedFacts")
@@ -343,7 +360,7 @@ class JclawTui(
         candidate?.candidateId?.let { appendLine("Candidate: $it") }
         appendLine("Langfuse: ${if (telemetryEnabled) "enabled; verify backend arrival" else "not configured"}")
         appendLine("Trace coverage: agent/API calls and CLI node handoffs.")
-        append("Human, mock send and final ingestion occur outside the agent trace.")
+        append("Human review is a graph node; mock send and final ingestion are outside the agent trace.")
     }
     private fun candidateText(): String = candidate?.let {
         buildString {
@@ -404,7 +421,7 @@ class JclawTui(
             else if (height >= 36) column(chatPanel(), candidatePanel()).constraint(Constraint.fill())
             else if (candidate != null) candidatePanel() else chatPanel()
         }
-        val summary = "TURN $turn · ${elapsedSeconds()}s · agent tools $toolCalls · skill reads $skillReads · ${candidate?.let { "review ${it.attempt}/3" } ?: "ready"}"
+        val summary = "TURN $turn · ${elapsedSeconds()}s · agent tools $toolCalls · skill reads $skillReads · ${candidate?.let { "review ${it.attempt}/$candidateLimit" } ?: "ready"}"
         val decisionLine = when (outcome) {
             DemoOutcome.HUMAN -> if (width >= 105) "SEND = approve exact message   HOLD = no delivery   Or type a change for a fresh review"
                 else "send: approve this message · hold: stop · or type a change"

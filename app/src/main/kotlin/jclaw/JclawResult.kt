@@ -18,11 +18,15 @@ public data class ClassifiedInput(
 @Serializable
 public enum class Intent { EXCUSE_REQUEST, CHAT }
 
-/** Only ReadyToSend can reach the application's human confirmation and send path. */
+/** ReadyToSend is a reviewed proposal; only HumanApproved reaches application delivery. */
 @Serializable
 public sealed interface JclawResult {
     @Serializable
     public data class ReadyToSend(val deployment: DeclineDeployment, val request: DeclineRequest) : JclawResult
+    @Serializable
+    public data class HumanApproved(val ready: ReadyToSend) : JclawResult
+    @Serializable
+    public data class Held(val deployment: DeclineDeployment) : JclawResult
     @Serializable
     public data class Blocked(val reason: String, val deployment: DeclineDeployment? = null) : JclawResult
     @Serializable
@@ -46,6 +50,10 @@ internal fun JclawResult.conversationText(): String = when (this) {
     is JclawResult.ReadyToSend -> "Codex approved this plan for your consideration.\n" +
         "Message: ${deployment.messageToOrganizer}\nHallway script: ${deployment.hallwayScript}\n" +
         "Awaiting your send/hold decision. Nothing has been sent yet."
+    is JclawResult.HumanApproved -> "The human approved this exact candidate.\n" +
+        "Message: ${ready.deployment.messageToOrganizer}\nHallway script: ${ready.deployment.hallwayScript}\n" +
+        "Application delivery is pending. Nothing has been sent yet."
+    is JclawResult.Held -> "Human held this candidate. Nothing was sent."
     is JclawResult.Blocked -> "BLOCKED: $reason\n" +
         (deployment?.let { "Draft message: ${it.messageToOrganizer}\nHallway script: ${it.hallwayScript}\n" } ?: "") +
         "Nothing was sent."

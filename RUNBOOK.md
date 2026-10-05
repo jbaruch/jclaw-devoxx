@@ -1,17 +1,18 @@
 # Devoxx rehearsal runbook
 
-This is a working build, not a completed rehearsal record. Seven competitive
+All seven Koog round modes have completed live provider rehearsals;
+[the audit](validation/rounds/README.md) records their actual scope and results. Seven competitive
 rounds lead to a verdict and a five-minute Port epilogue. Memory and skills are
 separate rounds. All human rejection and approval belongs to guardrails.
 
 ## Build and launch
 
 ```bash
-./gradlew :app:test :mocks:mcpJars
-./jclaw workflow           # round 5: reviewed proposal or blocked; never asks to send
-./jclaw guardrails         # round 6: full human approval / rejection sequence
-./jclaw observability      # round 7: same workflow, round-7 trace metadata
-./jclaw port               # closing: local mock bridge for the native Port workflow
+./jclaw doctor             # local prerequisites; no provider calls
+./jclaw prepare-demo       # new fictional session; preserves all existing history
+./jclaw demo 1             # then 2–7, quitting between rounds
+./jclaw demo 5 plain       # stdout fallback for any round
+./jclaw port               # closing: local bridge for the native Port workflow
 ```
 
 Append `plain` for stdout. Use `./jclaw --help` for standalone tools.
@@ -33,8 +34,8 @@ provider calls or actions. It must not be presented as an executed agent run.
 
 Baruch must run and review the complete app on `main` before step branches are
 derived by removing features. Do not prepare them before that review.
-Rounds 1–4 then need their own branches before the seven-round run is stage-ready.
-Do not present the combined baseline as those missing checkpoints.
+All seven capability modes already run without branches. Step branches are still
+on hold until that review; no branch preparation is required to rehearse now.
 
 ## Shared input and observed outcomes
 
@@ -46,7 +47,36 @@ Read the actual candidate and verdict. Immediate approval, refinement and blocki
 are all possible. Do not promise the critic will discover a particular excuse.
 A prepared result used after failure must be identified as a rehearsal.
 
+## Round 1–4: conversational assistant
+
+1. `./jclaw demo 1`: paste the shared opening ask, then “Can you send it?” Text
+   alone has no tool authority. There is no calendar, history retrieval or send.
+2. Quit; `./jclaw demo 2`: paste the same ask. Inspect actual calendar and organizer
+   calls/results in Activity. Declined flags omit the old reasons; j-claw must
+   acknowledge that gap. “Send that exact message to Dana for the training” invokes
+   a validated receipt, with no durable sent-history feature yet.
+3. Quit; `./jclaw demo 3`: repeat the ask. Retrieve the three real seed documents;
+   identify the reasons being avoided. Send the chosen text explicitly and inspect
+   the new literal sent fact. Conversation follow-ups use native ChatMemory.
+4. Quit; `./jclaw demo 4`: “Rewrite the last message in corporate-speak. Keep the
+   facts and commitments unchanged. Do not send it.” Round 3's conversation survives
+   this restart. Show actual discovery and SKILL.md read; default intensity eleven.
+   Then “Keep that message, but turn the corporate-speak down to intensity 4.
+   Do not send it.” Both rewrites preserve facts and perform no action/history write.
+
+The assistant and four generic panes remain the same; only available capabilities
+change. No fixed calendar/draft topology is displayed before execution. F3 shows
+actual tool results; F4 distinguishes receipt confirmation from durable memory.
+A fresh `prepare-demo` creates three independent seed groups: rounds 3/4, round 5,
+and rounds 6/7. Earlier teaching sends cannot accidentally burn round 5's baseline.
+Repeated runs within each group retain confirmed facts. Personal memory is untouched.
+
 ## Round 5: automated loop
+
+Launch `./jclaw demo 5`. Judge requires a usable, reasonably plausible proposal;
+CREDIBLE is sufficient. Minor polish is advice, in both the automatic and human
+rounds. Avoided-reason notes appear in the app, outside outbound text. A failed or
+invalid Judge still blocks; no approval is manufactured at the limit.
 
 1. Inspect calendar read → Jev intent/event decision → application request assembly, then draft and the complete critic input.
 2. Follow the actual route: approve, refine within the shared six-refinement limit, or block.
@@ -56,6 +86,8 @@ A prepared result used after failure must be identified as a rehearsal.
    without provider calls. This small example begins with an identified request.
 
 ## Round 6: human loop and delivery
+
+Launch `./jclaw demo 6`.
 
 1. Run guardrails mode and read the exact reviewed message and recipient.
 2. Hold it: no delivery and no sent-history write.
@@ -75,7 +107,9 @@ confirmed sent fact. These are fixtures, not live framework verdicts.
 
 ## Round 7: trace evidence
 
-Configure Langfuse locally, run observability mode, then quit cleanly to flush.
+Configure Langfuse locally, run `./jclaw demo 7`, then quit cleanly to flush.
+Begin with “What exact message did you send to Dana for the Basic AI Proficiency
+Training? Quote it. Do not send anything.” It retrieves round 6’s confirmed send.
 Select the newest trace by timestamp, session and Devoxx release metadata.
 Inspect actual node inputs/outputs, repeated review attempts, feedback and duration.
 
@@ -99,11 +133,25 @@ the resulting code change and its compile/test result. BUILD-NOTES.md records
 the source versions and corrections. Plugin 0.6.0 includes the repairs from
 issue #31 / PR #32; the relevant updated guidance was reviewed against this build.
 
-## Remaining rehearsal work
+## Recovery and remaining rehearsal work
+
+Preflight CLI subscription login, model availability and Langfuse before the show.
+`doctor` checks configuration; it does not assert a live subscription works or that
+traces arrived. The audit's successful runs took about 16–112 seconds per scenario,
+including launch/embedding work and scripted review inputs. These are observations,
+not framework benchmarks or runtime guarantees. Native human waits add real time.
+
+Timebox a live attempt at two minutes of provider work. Inspect the actual failure;
+if provider availability prevents progress, show the labelled prepared transcript
+and trace in `validation/rounds`, then continue the explanation. Do not repeatedly
+ask the same failing Judge, weaken the criterion during the show or reset sent
+history to manufacture a success. Unconfirmed delivery requires inspection before
+retrying. A fresh fictional session is an explicit presenter action.
+
 
 - See BUILD-NOTES.md for the completed live stdout runs, plugin 0.6.0 review and trace evidence.
 - Continue full-show rehearsal; the native-helper example passes graph tests, and the TamboUI dashboard passed native terminal interaction checks and live guardrails delivery.
-- Derive the seven step branches from the completed app by removing features.
+- Wait for Baruch's complete-app review before deriving step branches.
 - Use the refreshed fictional Tuesday October 6 fixture on both sides.
 
 ## Port closing

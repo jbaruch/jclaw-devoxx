@@ -36,7 +36,7 @@ public enum class PlausibilityTier {
     @LLMDescription("Would hold up under close scrutiny and follow-up questions.")
     AIRTIGHT,
 
-    @LLMDescription("Not checkable, but nobody would bother.")
+    @LLMDescription("Coherent and reasonably plausible; organizer acceptance is not guaranteed.")
     CREDIBLE,
 
     @LLMDescription("Would not survive one follow-up question.")
@@ -77,9 +77,9 @@ public data class DeclineDeployment(
         "none exists. Drafting a plan does not create calendar events."
     )
     val fakeCalendarEventId: String? = null,
-    @property:LLMDescription("The decline message that goes to the organizer")
+    @property:LLMDescription("Literal decline message for the organizer; no internal notes, instructions or placeholders")
     val messageToOrganizer: String,
-    @property:LLMDescription("Hallway script - what the user says if asked about this tomorrow")
+    @property:LLMDescription("Literal brief hallway answer; no internal notes or avoided-flavor lists; do not assume permission was granted")
     val hallwayScript: String,
 )
 
@@ -88,9 +88,9 @@ public data class DeclineDeployment(
 public data class DeclineCritique(
     @property:LLMDescription("How well this survives contact with People Ops")
     val tier: PlausibilityTier,
-    @property:LLMDescription("True only when the decline is safe to send")
+    @property:LLMDescription("True when the exact candidate passes automatic quality review as a usable proposal; this is not permission to send")
     val approved: Boolean,
-    @property:LLMDescription("What to fix, when not approved")
+    @property:LLMDescription("At most two concrete blockers with a minimal repair, or concise optional advice when approved")
     val feedback: String,
 )
 

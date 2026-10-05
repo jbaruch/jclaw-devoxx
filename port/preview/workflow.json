@@ -3,7 +3,7 @@
   "title": "j-claw — reviewed decline",
   "icon": "Code",
   "category": "Devoxx demo",
-  "description": "Get the user out of a training session or workshop with a reviewed decline. Use when the user asks to get out of, skip, avoid or decline training, including Basic AI Proficiency Training run by Dana. Pass the complete user request verbatim. Identify once, then Draft → Judge → Human critic. Either rejection feeds the same Refine node and returns through both critics. Six refinements total per request; exhaustion blocks. Exact-candidate mock delivery and receipt-backed sent history. Port invokes APIs, not subscription CLIs.",
+  "description": "Get the user out of a training session or workshop with a reviewed decline. Use when the user asks to get out of, skip, avoid or decline training, including Basic AI Proficiency Training run by Dana. Pass the complete user request verbatim. Identify once, then Draft → Judge → Human critic. Either rejection feeds the same Refine node and returns through both critics. Six refinements total per request; exhaustion blocks. Exact-candidate delivery and receipt-backed sent history.",
   "allowAnyoneToViewRuns": false,
   "nodes": [
     {
@@ -436,7 +436,7 @@
     },
     {
       "identifier": "a0_deliver",
-      "title": "Send + validate matching mock receipt",
+      "title": "Send + validate matching receipt",
       "config": {
         "type": "WEBHOOK",
         "url": "https://jclaw-bridge.example.invalid/deliver",
@@ -750,7 +750,7 @@
     },
     {
       "identifier": "a1_deliver",
-      "title": "Send + validate matching mock receipt",
+      "title": "Send + validate matching receipt",
       "config": {
         "type": "WEBHOOK",
         "url": "https://jclaw-bridge.example.invalid/deliver",
@@ -1064,7 +1064,7 @@
     },
     {
       "identifier": "a2_deliver",
-      "title": "Send + validate matching mock receipt",
+      "title": "Send + validate matching receipt",
       "config": {
         "type": "WEBHOOK",
         "url": "https://jclaw-bridge.example.invalid/deliver",
@@ -1378,7 +1378,7 @@
     },
     {
       "identifier": "a3_deliver",
-      "title": "Send + validate matching mock receipt",
+      "title": "Send + validate matching receipt",
       "config": {
         "type": "WEBHOOK",
         "url": "https://jclaw-bridge.example.invalid/deliver",
@@ -1692,7 +1692,7 @@
     },
     {
       "identifier": "a4_deliver",
-      "title": "Send + validate matching mock receipt",
+      "title": "Send + validate matching receipt",
       "config": {
         "type": "WEBHOOK",
         "url": "https://jclaw-bridge.example.invalid/deliver",
@@ -2006,7 +2006,7 @@
     },
     {
       "identifier": "a5_deliver",
-      "title": "Send + validate matching mock receipt",
+      "title": "Send + validate matching receipt",
       "config": {
         "type": "WEBHOOK",
         "url": "https://jclaw-bridge.example.invalid/deliver",
@@ -2320,7 +2320,7 @@
     },
     {
       "identifier": "a6_deliver",
-      "title": "Send + validate matching mock receipt",
+      "title": "Send + validate matching receipt",
       "config": {
         "type": "WEBHOOK",
         "url": "https://jclaw-bridge.example.invalid/deliver",

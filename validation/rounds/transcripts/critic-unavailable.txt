@@ -1,0 +1,78 @@
+[calendar-mcp] ready
+[organizer-mcp] ready
+skills: corporate-speak
+  == memory: embedded 3 stories from <repo>/build/round-audit/critic-unavailable-memory/documents
+[round] 6 GUARDRAILS
+[mode] DOMAIN-MODELLED
+[models] jev-1.13.0 routes/identifies; gemini-3.7-flash chats; claude-opus-4-6 subscription drafts/refines; gpt-6.1-sol (low) subscription judges
+
+j-claw: At your service. What can I help with? Blank line or ctrl-D quits.
+
+you: [readCalendar] Application · calendar MCP - STARTED
+[calendar-mcp] getCalendar -> 4 events
+[readCalendar] Application · calendar MCP - COMPLETED
+[jevDecision] TypeSafe jev-1.13.0 (API) - STARTED
+[decision] jev-1.13.0 · 2704ms · DECLINE
+[decision] intent: EXCUSE_REQUEST · confidence 0.99 · margin 1.00
+[decision]   EXCUSE_REQUEST 100.0%
+[decision]   CHAT 0.0%
+[decision] event: basic-ai-proficiency-2026 · confidence 0.96 · margin 0.94
+[decision]   basic-ai-proficiency-2026 97.0%
+[decision]   NO_MATCH 3.0%
+[decision]   AMBIGUOUS 0.0%
+[decision]   compliance-refresher-2026 0.0%
+[decision]   ways-of-working-2026 0.0%
+[decision]   security-awareness-m4-2026 0.0%
+[decision] Reported tokens: {input_tokens=1913, output_tokens=144}
+[jevDecision] TypeSafe jev-1.13.0 (API) - COMPLETED
+[assembleRequest] Application · canonical identity + confirmed memory - STARTED
+  <- memory: confirmed history for Dana from People Ops: CUSTOMER_ESCALATION, FAMILY_OBLIGATION, CALENDAR_CONFLICT
+[assembleRequest] Application · canonical identity + confirmed memory - COMPLETED
+[calendar-mcp] getCalendar -> 4 events
+[deploy] claude-opus-4-6 (subscription) - STARTED
+[deploy] claude-opus-4-6 (subscription) - COMPLETED
+
+Claude draft 1 (awaiting Codex review)
+Flavor: ALREADY_PROFICIENT
+Avoiding already sent reasons: CUSTOMER_ESCALATION, FAMILY_OBLIGATION, CALENDAR_CONFLICT
+
+Message:
+Hi Dana, I saw the Basic AI Proficiency Training on Tuesday — thanks for organizing this for the team. I wanted to flag that I may not be the best use of a seat: I build AI agents day-to-day and I'm actually giving a public conference talk on that exact topic Tuesday afternoon. Would it be possible to get an exemption, or if it's useful, I'm happy to drop in as a resource for Q&A instead of attending the full session? Let me know what works.
+
+Hallway script:
+I asked Dana if I could skip the Basic AI training — I'm literally presenting on building AI agents at a conference that same afternoon, so sitting through the intro session didn't make a lot of sense. Offered to help with Q&A if they want me there instead.
+
+[verify] gpt-6.1-sol / low (subscription) - STARTED
+ai.koog.agents.cli.transport.CliNotFoundException: CLI 'codex' is not available: Process exited with code 1
+	at ai.koog.agents.cli.AIAgentCliStrategy.checkAvailability(AIAgentCliStrategy.kt:46)
+	at ai.koog.agents.cli.AIAgentCliStrategy.access$checkAvailability(AIAgentCliStrategy.kt:15)
+	at ai.koog.agents.cli.AIAgentCliStrategy$checkAvailability$1.invokeSuspend(AIAgentCliStrategy.kt)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source)
+	at jclaw.MainKt.main(Main.kt:20)
+	at jclaw.MainKt.main(Main.kt)
+ai.koog.agents.cli.transport.CliNotFoundException: CLI 'codex' is not available: Process exited with code 1
+	at ai.koog.agents.cli.AIAgentCliStrategy.checkAvailability(AIAgentCliStrategy.kt:46)
+	at ai.koog.agents.cli.AIAgentCliStrategy.access$checkAvailability(AIAgentCliStrategy.kt:15)
+	at ai.koog.agents.cli.AIAgentCliStrategy$checkAvailability$1.invokeSuspend(AIAgentCliStrategy.kt)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(Unknown Source)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(Unknown Source)
+	at jclaw.MainKt.main(Main.kt:20)
+	at jclaw.MainKt.main(Main.kt)
+[verify] gpt-6.1-sol / low (subscription) - FAILED
+BLOCKED: Codex review failed: CLI 'codex' is not available: Process exited with code 1
+Nothing was sent. There is no send override.
+
+you: 

@@ -90,7 +90,7 @@ class Memory private constructor(
         }
 
         /** Where it lives. `./jclaw` runs from the repo root; Gradle passes the absolute path. */
-        val dir: Path = Path(System.getProperty("jclaw.memory") ?: "memory")
+        val dir: Path = Path(System.getProperty("jclaw.memory") ?: System.getenv("JCLAW_MEMORY_ROOT") ?: "memory")
 
         suspend fun open(embedder: Embedder, root: Path = dir, trace: (String) -> Unit = ::println): Memory {
             val store = TextFileDocumentEmbeddingStorage(embedder, Files, JVMFileSystemProvider.ReadWrite, root)

@@ -6,6 +6,11 @@ import kotlinx.coroutines.withContext
 import ai.koog.agents.chatMemory.feature.ChatMemoryConfig
 import ai.koog.agents.chatMemory.feature.ChatMemoryPreProcessor
 import ai.koog.agents.chatMemory.feature.InMemoryChatHistoryProvider
+import ai.koog.agents.chatMemory.feature.ChatHistoryProvider
+import kotlinx.serialization.json.Json
+import java.nio.file.Path
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.MessagePart
 import ai.koog.prompt.message.RequestMetaInfo
@@ -14,10 +19,10 @@ import ai.koog.utils.time.KoogClock
 import java.util.UUID
 import jclaw.domain.ExcuseFlavor
 
-/** One process-local conversation. LongTermMemory separately persists successful sends. */
-internal class Conversation(val systemPrompt: String) {
+/** Native ChatMemory, optionally backed by a rehearsal file. Sent facts live separately. */
+internal class Conversation(val systemPrompt: String, file: Path? = null) {
     val id: String = UUID.randomUUID().toString()
-    private val history = InMemoryChatHistoryProvider()
+    private val history: ChatHistoryProvider = file?.let(::FileChatHistory) ?: InMemoryChatHistoryProvider()
     private val window = ConversationWindow(systemPrompt)
     private var proposals = emptyMap<String, List<ExcuseFlavor>>()
 
@@ -100,5 +105,21 @@ private fun completedToolExchanges(messages: List<Message>): List<Message> = bui
             }
             else -> Unit
         }
+    }
+}
+
+/** A single named conversation using Koog's native message serialization and provider contract. */
+internal class FileChatHistory(private val file: Path) : ChatHistoryProvider {
+    override suspend fun load(conversationId: String): List<Message> =
+        if (Files.exists(file)) Json.decodeFromString(Files.readString(file)) else emptyList()
+
+    override suspend fun store(conversationId: String, messages: List<Message>) {
+        val parent = file.toAbsolutePath().parent
+        Files.createDirectories(parent)
+        val temporary = Files.createTempFile(parent, ".conversation-", ".json")
+        try {
+            Files.writeString(temporary, Json.encodeToString(messages))
+            Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+        } finally { Files.deleteIfExists(temporary) }
     }
 }

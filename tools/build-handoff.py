@@ -69,6 +69,7 @@ The root build includes domain, mocks and tui. app/ contains Koog source/test
 references; it is not configured as a runnable app here. Built stdio mock jars
 are under mock-jars/. Exactly three fictional sent-history seeds are included.
 
+See validation/rounds/README.md for the seven-round live Koog audit.
 See validation/jev/README.md for the frozen decisions and raw admission evidence.
 See validation/langchain4j/README.md for the released native DecisionModel probe.
 It compiles independently with ./gradlew -p validation/langchain4j classes.

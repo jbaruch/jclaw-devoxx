@@ -39,7 +39,7 @@ organizer. It accepts delivery only when the receipt matches the call, candidate
 event and organizer and contains a valid timestamp. Only a confirmed success
 becomes sent history. An uncertain result requires checking before retrying.
 
-Conversation memory keeps the current session. File-backed long-term memory
+Conversation memory keeps the current session; rehearsal rounds 3 and 4 also preserve it across their launcher restart. File-backed long-term memory
 keeps confirmed sends across restarts. Runtime skills use native Koog discovery
 and read-only file tools restricted to the configured skills directory.
 Corporate-speak accepts intensity 1–11 and defaults to eleven.
@@ -52,7 +52,7 @@ with built mock MCP jars, shared fixtures, TamboUI and the native LangChain4j Je
 probe. Read [HANDOFF-LC4J.md](HANDOFF-LC4J.md) for scope and acceptance criteria.
 The bundle assigns only the LangChain4j demo; Baruch owns the presentation and Port.
 
-Prerequisites: JDK 21, TypeSafe and Google API access, and `claude` and `codex` on PATH
+Prerequisites: JDK 21, Python 3, TypeSafe and Google API access, and `claude` and `codex` on PATH
 with subscription login already configured. The Gradle wrapper handles Gradle.
 Use JDK 21 for Gradle; on macOS the launcher selects the installed JDK 21, while
 other platforms should set JAVA_HOME to that JDK.
@@ -61,9 +61,9 @@ other platforms should set JAVA_HOME to that JDK.
 cp .env.example .env
 # Edit .env locally with TYPESAFE_API_KEY and GOOGLE_API_KEY.
 ./gradlew :app:test :mocks:mcpJars
-./jclaw workflow
-./jclaw guardrails
-./jclaw observability
+./jclaw doctor
+./jclaw prepare-demo
+./jclaw demo 1             # then demo 2 through demo 7; quit between rounds
 ```
 
 Paste the shared opening request:
@@ -73,7 +73,13 @@ Paste the shared opening request:
 > ones you're avoiding.
 
 The development launcher preserves local files and memory and never switches Git branches.
-Use `./jclaw workflow plain` or `./jclaw guardrails plain` for stdout.
+Use `./jclaw demo 3 plain` for stdout. `prepare-demo` creates a new named fictional
+rehearsal without deleting personal memory or earlier sessions. Rounds 3/4 share
+conversation and sent history; round 5 gets its own seed snapshot; rounds 6/7 share
+confirmed sends for restart recall. Quit round 3 before launching round 4. Repeated
+launches retain facts; run `prepare-demo` explicitly for a fresh rehearsal.
+
+`./jclaw round 1` through `round 7` use your configured personal memory instead.
 Bare `./jclaw` opens guardrails mode. Other tools:
 
 ```bash
@@ -100,7 +106,7 @@ See [the TamboUI controls](tui/README.md) and use `./jclaw preview` to check the
 Press F1 to return focus to the prompt before pasting with the terminal's paste
 shortcut. Enter submits the prompt. The launcher copies the app and mock JARs to
 a private directory for each run, so rebuilding during a demo cannot replace its
-running code. Those files are removed on exit; memory and skills remain in the repo.
+running code. INT/TERM/HUP are forwarded, and those files are removed only after the child exits; memory and skills remain in the repo.
 
 The [earlier fixture screenshot](docs/tamboui-preview.png) records the previous
 workflow-focused layout; the current assistant panes and controls are described above.
@@ -124,13 +130,23 @@ until Baruch runs and reviews the complete app; none are created yet.
 
 | Round | Capability | Status |
 |---|---|---|
-| 1 | Chatbot | Dedicated Devoxx checkpoint pending |
-| 2 | Tools / MCP | Dedicated checkpoint pending; mocks included |
-| 3 | Memory | Dedicated checkpoint pending; implementation included |
-| 4 | Skills | Dedicated checkpoint pending; runtime skill and runner included |
-| 5 | Multi-agent workflows | Native example, full CLI workflow and live TamboUI paths verified |
-| 6 | Guardrails / human loop | Current Jev/TamboUI mixed-approver loop delivered live; stdout passed the old bound; projector rehearsal pending |
-| 7 | Observability | Live agent/CLI traces and critic request metadata verified; projector walkthrough pending |
+| 1 | Chatbot | Live text-only draft and honest inability to send |
+| 2 | Tools / MCP | Live reads, visible results, explicit send and receipt; no sent-history memory |
+| 3 | Memory | Live retrieved reasons, conversation follow-up, confirmed literal-message ingestion |
+| 4 | Skills | Restart from round 3; native skill discovery/read; intensity 11 then 4; no action |
+| 5 | Multi-agent workflows | Live Jev → Draft → Judge → one refinement → approved proposal; no Human/send |
+| 6 | Guardrails / human loop | Live Hold and mixed Judge/Human refinement; exact send and one durable fact; native TamboUI delivery |
+| 7 | Observability | Backend Jev/CLI/loop traces verified, restart exact-message recall and four-record-history delivery |
+
+All seven modes run from the complete app without step branches. The shared Judge
+criterion is a **usable proposal that passes automatic quality review** in every
+mode: CREDIBLE suffices; optional polish does not spend a refinement. It rejects
+concrete contradictions, reused reasons and internal notes. The app displays
+avoided reasons separately from outbound text. Six refinements remain a safety
+limit, not a desired demo length. Exact model pins: `gemini-3.7-flash`,
+`jev-1.13.0`, `claude-opus-4-6`, `gpt-6.1-sol` with low reasoning.
+See [the October 4 audit](validation/rounds/README.md) for timings, transcripts,
+actual traces and the limits of this verification.
 
 The closing [Port implementation](port/README.md) is deployed in J-Claw. Live
 execution has verified real MCP reads, critic refinements and a native Hold with

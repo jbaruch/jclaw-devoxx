@@ -40,6 +40,7 @@ class JclawTui(
     private val reviewOnly: Boolean = false,
     private val telemetryEnabled: Boolean = false,
     private val providerLegend: String = "Personal assistant · tools, memory and reusable skills",
+    private val traceCoverage: String = "Agent/API calls and CLI node handoffs",
 ) : ToolkitApp() {
     private val activity = mutableListOf<ActivityStep>()
     private val chatMessages = mutableListOf<ChatMessage>()
@@ -219,13 +220,15 @@ class JclawTui(
         appendTrace(TraceMessage("↪ $name($args)", TraceKind.TOOL_CALL))
     }
 
-    fun deliveryConfirmed(id: String) = onRenderThread {
+    fun deliveryConfirmed(id: String) = deliveryConfirmed(id, true)
+
+    fun deliveryConfirmed(id: String, persist: Boolean) = onRenderThread {
         receiptId = id
-        delivery = "Validated mock receipt"
-        memoryStatus = "Saving confirmed outbound message"
+        delivery = "Validated receipt"
+        memoryStatus = if (persist) "Saving confirmed outbound message" else "Not enabled in this round"
         recordStage("send", StageState.DONE)
         outcome = DemoOutcome.DELIVERED
-        outcomeDetail = "Exact message and target confirmed by the organizer mock"
+        outcomeDetail = "Exact message and target confirmed by the organizer"
         turnFinishedNanos = System.nanoTime()
     }
 
@@ -242,7 +245,7 @@ class JclawTui(
     }
 
     fun deliveryFailed(unconfirmed: Boolean) = onRenderThread {
-        delivery = if (unconfirmed) "Unknown; check before retrying" else "Refused by organizer mock"
+        delivery = if (unconfirmed) "Unknown; check before retrying" else "Refused by organizer"
         recordStage("send", StageState.FAILED)
         outcome = if (unconfirmed) DemoOutcome.UNCONFIRMED else DemoOutcome.BLOCKED
         outcomeDetail = delivery
@@ -367,17 +370,19 @@ class JclawTui(
         if (candidate != null) {
             appendLine("Review: $verdict · candidate ${candidate?.attempt}/$candidateLimit")
             appendLine("Human: $human")
-            appendLine("Delivery: $delivery")
-            appendLine("Memory: $memoryStatus · saved this session: $savedFacts")
         } else {
             appendLine("Task: ${outcome.label.lowercase()}")
             if (savedFacts > 0) appendLine("Confirmed outbound facts saved this session: $savedFacts")
         }
+        if (candidate != null || receiptId != null) {
+            appendLine("Delivery: $delivery")
+            appendLine("Memory: $memoryStatus · saved this session: $savedFacts")
+        }
         receiptId?.let { appendLine("Receipt: $it") }
         candidate?.candidateId?.let { appendLine("Candidate: $it") }
         appendLine("Langfuse: ${if (telemetryEnabled) "enabled; verify backend arrival" else "not configured"}")
-        appendLine("Trace coverage: agent/API calls and CLI node handoffs.")
-        if (candidate != null) append("Human review is a graph node; mock send and final ingestion are outside the agent trace.")
+        appendLine("Trace coverage: $traceCoverage.")
+        if (candidate != null) append("Human review is a graph node; send and final ingestion are outside the agent trace.")
     }
     private fun candidateText(): String = candidate?.let {
         buildString {

@@ -151,6 +151,9 @@ internal fun withLangfuseNodeDetails(span: SpanData): SpanData {
             put("langfuse.observation.metadata.provider", provider)
             put("langfuse.observation.metadata.client", if (node == "verify") "codex" else "claude-code")
             put("langfuse.observation.metadata.authentication", "subscription")
+            put("gen_ai.request.model", if (node == "verify") TypedCodex.model else CliCritic.draftModel)
+            put("langfuse.observation.metadata.configured_model", if (node == "verify") TypedCodex.model else CliCritic.draftModel)
+            if (node == "verify") put("langfuse.observation.metadata.reasoning_effort", TypedCodex.reasoningEffort)
             put("langfuse.observation.metadata.role", when (node) {
                 "deploy" -> "drafter"
                 "refine" -> "refiner"

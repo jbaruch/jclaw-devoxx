@@ -6,6 +6,10 @@ cd "$(dirname "$0")"
 usage() {
   cat <<'HELP'
 Usage: ./jclaw [workflow|guardrails|observability] [tui|plain]
+       ./jclaw round <1-7> [tui|plain]
+       ./jclaw doctor
+       ./jclaw prepare-demo
+       ./jclaw demo <1-7> [tui|plain]
        ./jclaw skills [intensity] 'source message'
        ./jclaw graph [native]
        ./jclaw preview
@@ -15,7 +19,7 @@ Usage: ./jclaw [workflow|guardrails|observability] [tui|plain]
        ./jclaw --help
 
 workflow       Round 5: reviewed proposal or blocked, with no human send prompt.
-guardrails     Round 6: human approval/rejection and validated mock delivery (default).
+guardrails     Round 6: human approval/rejection and validated delivery (default).
 observability  Round 7: same guardrails path, with round-7 trace metadata.
 plain / tui    Guardrails on stdout / terminal UI.
 skills         Standalone corporate-speak runner; no delivery.
@@ -29,8 +33,21 @@ HELP
 }
 
 mode="${1:-guardrails}"
+round_number=""
 case "$mode" in
   --help|-h) usage; exit 0 ;;
+  doctor) shift ;;
+  prepare-demo) exec python3 tools/prepare-demo.py ;;
+  demo|round)
+    shift
+    round_number="${1:-}"
+    case "$round_number" in [1-7]) ;; *) usage >&2; exit 2 ;; esac
+    shift
+    surface="${1:-tui}"
+    if [ "$surface" != tui ] && [ "$surface" != plain ]; then usage >&2; exit 2; fi
+    if [ "$#" -gt 0 ]; then shift; fi
+    if [ "$#" -gt 0 ]; then usage >&2; exit 2; fi
+    ;;
   workflow|guardrails|observability)
     if [ "$#" -gt 0 ]; then shift; fi
     surface="${1:-tui}"
@@ -44,16 +61,39 @@ case "$mode" in
 esac
 
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
+if [ "$mode" = doctor ]; then exec python3 tools/check-demo.py; fi
 if [ "$mode" != graph ] && [ "$mode" != preview ] && [ "$mode" != port ] && [ "$mode" != jev ] && [ -z "${GOOGLE_API_KEY:-}" ]; then
   echo "GOOGLE_API_KEY is not set. Put it in .env (see .env.example)." >&2
   exit 1
 fi
 
 case "$mode" in
+  demo|round)
+    export JCLAW_ROUND="$round_number" JCLAW_REVIEW_ONLY=0
+    if [ "$round_number" = 5 ]; then export JCLAW_REVIEW_ONLY=1; fi
+    ;;
   workflow) export JCLAW_ROUND=5 JCLAW_REVIEW_ONLY=1 ;;
   observability) export JCLAW_ROUND=7 JCLAW_REVIEW_ONLY=0 ;;
   *) export JCLAW_ROUND=6 JCLAW_REVIEW_ONLY=0 ;;
 esac
+
+
+if [ "$mode" = demo ]; then
+  if [ ! -f build/demo/current ]; then python3 tools/prepare-demo.py; fi
+  demo_root="$(cat build/demo/current)"
+  case "$round_number" in
+    3|4) demo_group=memory-skills ;;
+    5) demo_group=workflows ;;
+    *) demo_group=guardrails-observability ;;
+  esac
+  export JCLAW_MEMORY_ROOT="$demo_root/$demo_group/memory"
+  if [ "$round_number" = 3 ] || [ "$round_number" = 4 ]; then
+    export JCLAW_CHAT_FILE="$demo_root/memory-skills/conversation.json"
+  else
+    export JCLAW_CHAT_FILE="$demo_root/round-$round_number-conversation.json"
+  fi
+  echo "[demo] $demo_root / round $round_number"
+fi
 
 # The app and Gradle wrapper use JDK 21; avoid inheriting an incompatible IDE JDK.
 if [ -x /usr/libexec/java_home ]; then
@@ -63,29 +103,17 @@ fi
 
 ./gradlew -q :app:installDist :mocks:mcpJars
 
-# Gradle replaces installDist in place. Give this JVM its own files so a later
-# build cannot invalidate classes that it has not loaded yet.
-mkdir -p build/runtime
-runtime_dir="$(mktemp -d "$PWD/build/runtime/run.XXXXXX")"
-trap 'rm -rf -- "$runtime_dir"' EXIT
-cp -R app/build/install/app "$runtime_dir/app"
-mkdir -p "$runtime_dir/mocks"
-cp mocks/build/libs/calendar-mcp.jar mocks/build/libs/organizer-mcp.jar "$runtime_dir/mocks/"
-export JCLAW_MOCKS_ROOT="$runtime_dir/mocks"
-
-# Keep the shell until the child exits so its private files can be cleaned up.
 case "$mode" in
-  skills) "$runtime_dir/app/bin/app-skills" "$@" ;;
-  graph) "$runtime_dir/app/bin/app-graph" "$@" ;;
-  preview) "$runtime_dir/app/bin/app-preview" "$@" ;;
-  codex) "$runtime_dir/app/bin/app-codex" ;;
-  port) "$runtime_dir/app/bin/app-port" ;;
-  jev) "$runtime_dir/app/bin/app-jev" "$@" ;;
+  skills) entry_point=app-skills ;;
+  graph) entry_point=app-graph ;;
+  preview) entry_point=app-preview ;;
+  codex) entry_point=app-codex ;;
+  port) entry_point=app-port ;;
+  jev) entry_point=app-jev ;;
   *)
-    if [ "$surface" = plain ]; then
-      "$runtime_dir/app/bin/app"
-    else
-      "$runtime_dir/app/bin/app-tui"
-    fi
+    if [ "$surface" = plain ]; then entry_point=app; else entry_point=app-tui; fi
     ;;
 esac
+
+# Keep running files separate from installDist; supervise signals and cleanup.
+exec python3 tools/run-isolated.py "$entry_point" "$@"

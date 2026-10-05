@@ -89,7 +89,7 @@ fun main() {
                 SendReply.Send -> if (approved) {
                     approved = false
                     tui.outcome(DemoOutcome.SENDING, "Simulated delivery only")
-                    phase("send", "Organizer mock")
+                    phase("send", "Organizer")
                     tui.deliveryConfirmed("fixture-receipt-no-delivery")
                     tui.memorySaved()
                     tui.chat("FIXTURE: simulated receipt and stored fact; nothing was delivered or persisted.", ChatKind.OK)

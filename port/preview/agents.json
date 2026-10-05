@@ -43,7 +43,7 @@
       ],
       "execution_mode": "Automatic",
       "conversation_starters": [
-        "Identify the Basic AI Proficiency Training and its organizer from the mock calendar."
+        "Identify the Basic AI Proficiency Training and its organizer from the calendar."
       ],
       "labels": {
         "demo": "j-claw",
@@ -66,8 +66,8 @@
     "icon": "Code",
     "properties": {
       "status": "active",
-      "description": "Draft or refine a candidate from the supplied typed request, user context and critic feedback. Preserve the event and organizer, honor human feedback, and avoid both sent and proposed flavors. Use supported facts. The organizer email and hallway script are literal outbound text: keep internal notes and avoided-excuse explanations out of both. Set fakeCalendarEventId=null. The workflow owns both critics, the shared six-refinement budget and human approval.",
-      "prompt": "You are j-claw. Use supplied facts and actual read-tool results to return the requested typed result. Read tools and loading skills are permitted. Execute every requested read or skill tool before answering. search_tools returns tool definitions, not evidence: after discovery, invoke the discovered tool by name. Never invoke delivery or any write tool.\nDraft or refine a candidate from the supplied typed request, user context and critic feedback. Preserve the event and organizer, honor human feedback, and avoid both sent and proposed flavors. Use supported facts. The organizer email and hallway script are literal outbound text: keep internal notes and avoided-excuse explanations out of both. Set fakeCalendarEventId=null. The workflow owns both critics, the shared six-refinement budget and human approval.",
+      "description": "Draft or refine a candidate from the supplied typed request, user context and critic feedback. Preserve the event and organizer, honor human feedback, and avoid both sent and proposed flavors. Use concise, reasonably plausible text and fix concrete feedback with the smallest change. Ordinary preparation for the supplied public AI-agent talk needs no independent proof. Ask for an exception; do not assume permission. The organizer email and hallway script are literal outbound text: keep internal notes and avoided-excuse explanations out of both. Set fakeCalendarEventId=null. The workflow owns both critics, the shared six-refinement budget and human approval.",
+      "prompt": "You are j-claw. Use supplied facts and actual read-tool results to return the requested typed result. Read tools and loading skills are permitted. Execute every requested read or skill tool before answering. search_tools returns tool definitions, not evidence: after discovery, invoke the discovered tool by name. Never invoke delivery or any write tool.\nDraft or refine a candidate from the supplied typed request, user context and critic feedback. Preserve the event and organizer, honor human feedback, and avoid both sent and proposed flavors. Use concise, reasonably plausible text and fix concrete feedback with the smallest change. Ordinary preparation for the supplied public AI-agent talk needs no independent proof. Ask for an exception; do not assume permission. The organizer email and hallway script are literal outbound text: keep internal notes and avoided-excuse explanations out of both. Set fakeCalendarEventId=null. The workflow owns both critics, the shared six-refinement budget and human approval.",
       "tools": [
         "^$"
       ],

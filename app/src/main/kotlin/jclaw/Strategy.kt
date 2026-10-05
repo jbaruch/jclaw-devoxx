@@ -105,7 +105,7 @@ internal fun jclawStrategy(
             // The exact request must survive both model handoffs, even if an echo is incomplete.
             val request = resolveRequest(identified.copy(userInstruction = storage.getValue(turnInput)))
             storage.set(draftRequest, request)
-            val plan = cliStage("deploy", "Claude (subscription)") { draft(request) }
+            val plan = cliStage("deploy", "${CliCritic.draftModel} (subscription)") { draft(request) }
             ReviewAttempt(plan, request = request)
         }
         val verify by node<ReviewAttempt, ReviewDecision> { attempt ->
@@ -116,7 +116,7 @@ internal fun jclawStrategy(
                         storage.set(turnReviewMessages, storage.get(turnReviewMessages).orEmpty() +
                             Message.Assistant(event.chatText(), ResponseMetaInfo.create(KoogClock.System)))
                     },
-                    judge = { plan -> cliStage("verify", "Codex (subscription)") {
+                    judge = { plan -> cliStage("verify", "${TypedCodex.model} / ${TypedCodex.reasoningEffort} (subscription)") {
                         judgePlan(DeclineReview(storage.getValue(draftRequest), plan))
                     } },
                     maxRefinements = maxRefinements,
@@ -128,7 +128,7 @@ internal fun jclawStrategy(
             }
         }
         val refine by node<ReviewDecision, ReviewAttempt> { decision ->
-            val plan = cliStage("refine", "Claude (subscription)") {
+            val plan = cliStage("refine", "${CliCritic.draftModel} (subscription)") {
                 refinePlan("REQUEST: ${storage.getValue(draftRequest)}\n" +
                     "Previous plan: ${decision.attempt.plan}\nCritic feedback: ${decision.feedback}")
             }

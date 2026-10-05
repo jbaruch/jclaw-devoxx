@@ -20,23 +20,30 @@ import kotlin.system.exitProcess
 fun main(): Unit = runBlocking {
     val apiKey = requireNotNull(System.getenv("GOOGLE_API_KEY")) { "GOOGLE_API_KEY is not set" }
     val naive = System.getenv("JCLAW_NAIVE") == "1"
+    val stage = DemoStage.configured()
     val autoSend = System.getenv("JCLAW_AUTOSEND") == "1"
     val reviewOnly = System.getenv("JCLAW_REVIEW_ONLY") == "1"
-    JevClient.configured().use { jev ->
-    Mcp.boot("calendar-mcp", "organizer-mcp").use { mcp ->
-        val skills = AgentSkills.discover()
-        val memory = Memory.open(LLMEmbedder(GoogleLLMClient(apiKey), GoogleModels.Embeddings.GeminiEmbedding001))
+    (if (stage.workflow) JevClient.configured() else null).use { jev ->
+    Mcp.boot(*if (stage.tools) arrayOf("calendar-mcp", "organizer-mcp") else emptyArray()).use { mcp ->
+        val skills = if (stage.skills) AgentSkills.discover() else AgentSkills.EMPTY
+        val memory = if (stage.memory) Memory.open(LLMEmbedder(GoogleLLMClient(apiKey), GoogleModels.Embeddings.GeminiEmbedding001)) else null
+        println("[round] ${stage.number} ${stage.title}")
         println("[mode] " + if (naive) "NAIVE - less context and no memory" else "DOMAIN-MODELLED")
-        println("[models] ${if (jev != null) jclaw.domain.JevProtocol.model else Models.flash.id} routes/identifies; " +
-            "${Models.flash.id} chats; Claude subscription drafts/refines; Codex subscription judges")
-        val conversation = Conversation("${Persona.PROMPT}\n${skills.prompt}")
+        println(if (!stage.workflow) "[models] ${Models.flash.id} conversational agent" else "[models] ${if (jev != null) jclaw.domain.JevProtocol.model else Models.flash.id} routes/identifies; " +
+            "${Models.flash.id} chats; ${CliCritic.draftModel} subscription drafts/refines; ${TypedCodex.model} (${TypedCodex.reasoningEffort}) subscription judges")
+        val conversation = Conversation("${Persona.PROMPT}\n${skills.prompt}",
+                System.getenv("JCLAW_CHAT_FILE")?.takeIf { stage.memory }?.let { java.nio.file.Path.of(it) })
+        val registry = if (!stage.workflow) earlyRoundTools(stage, mcp, EarlyActions(mcp, memory,
+            delivered = { println("sent: $it") }, memorySaved = { println("[memory] Exact outbound message saved") },
+            memoryFailure = { println("Delivered, but could not save to memory: ${it.message}") }), skills)
+            else mcp.registry + skills.registry
         val agent = AIAgent(
             id = "j-claw",
             promptExecutor = simpleGoogleAIExecutor(apiKey),
             agentConfig = AIAgentConfig.withSystemPrompt(
-                prompt = conversation.systemPrompt, llm = Models.flash, maxAgentIterations = 200,
+                prompt = conversation.systemPrompt, llm = Models.flash, maxAgentIterations = if (stage.workflow) 200 else 30,
             ),
-            strategy = jclawStrategy(
+            strategy = if (!stage.workflow) earlyRoundStrategy(stage, registry.tools) else jclawStrategy(
                 mcp, naive, skills,
                 onStage = { stage, model, state -> println("[$stage] $model - $state") },
                 onReview = {
@@ -45,33 +52,35 @@ fun main(): Unit = runBlocking {
                 },
                 jev = jev, memory = memory, proposedFlavors = conversation::proposedFlavors,
                 onDecision = { it.lines().forEach { line -> println("[decision] $line") } },
-                humanReview = if (reviewOnly) null else { attempt ->
+                humanReview = if (!stage.human || reviewOnly) null else { attempt ->
                     val plan = attempt.plan
                     val request = requireNotNull(attempt.request)
                     println("=== HUMAN REVIEW: CODEX APPROVED THIS CANDIDATE ===")
                     println("flavor: ${plan.flavor}\nmessage: ${plan.messageToOrganizer}\nhallway: ${plan.hallwayScript}")
                     println("recipient: ${request.organizerName}; event: ${request.eventId}")
                     print("Send it? [send/y/N, or tell me what to change] ")
-                    val answer = if (autoSend) { println("y (mock rehearsal)"); "y" }
+                    val answer = if (autoSend) { println("y (automated rehearsal)"); "y" }
                         else readlnOrNull()?.trim().orEmpty()
                     humanReview(answer)
                 },
             ),
-            toolRegistry = mcp.registry + skills.registry,
+            toolRegistry = registry,
         ) {
             install(ChatMemory) { conversation.configure(this) }
             if (Observability.enabled) install(OpenTelemetry) {
                 langfuse(
                     System.getenv("JCLAW_ROUND")?.toIntOrNull() ?: if (reviewOnly) 5 else 6,
-                    if (naive) "naive" else "domain-modelled", "critic:codex", "drafter:claude-code",
-                    metadata = mapOf("model" to Models.flash.id, "decider" to if (jev != null) jclaw.domain.JevProtocol.model else Models.flash.id,
-                        "drafter" to "claude-code", "critic" to "codex"),
+                    if (naive) "naive" else "domain-modelled", *stage.telemetryTags(),
+                    metadata = stage.telemetryMetadata(if (jev != null) jclaw.domain.JevProtocol.model else Models.flash.id),
                 )
             }
-            if (!naive) install(LongTermMemory) {
-                retrieval { storage = memory; searchStrategy = SimilaritySearchStrategy(topK = 5) }
+            if (stage.memory && !naive) install(LongTermMemory) {
+                retrieval { storage = requireNotNull(memory); searchStrategy = SimilaritySearchStrategy(topK = 5) }
             }
-            handleEvents { onToolCallStarting { println("      tool ${it.toolName}") } }
+            handleEvents {
+                onToolCallStarting { println("      tool ${it.toolName}") }
+                onToolCallCompleted { println("      result ${it.toolName}: ${it.toolResult}") }
+            }
         }
         try {
             println("\n${Persona.WELCOME} Blank line or ctrl-D quits.\n")
@@ -95,7 +104,7 @@ fun main(): Unit = runBlocking {
                         }
                         is JclawResult.HumanApproved -> {
                             deliveryAttempted = true
-                            sendAndRemember(result.ready, mcp, memory,
+                            sendAndRemember(result.ready, mcp, requireNotNull(memory),
                                 onDelivered = { receipt ->
                                     println("sent: $receipt")
                                     conversation.assistant("Delivered. Organizer receipt: $receipt")

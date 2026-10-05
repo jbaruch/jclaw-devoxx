@@ -3,10 +3,10 @@
   "entities": [
     {
       "identifier": "jclaw-read",
-      "title": "j-claw read-only mocks",
+      "title": "j-claw read tools",
       "properties": {
         "url": "https://jclaw-bridge.example.invalid/mcp",
-        "description": "Read-only calendar and organizer from the same JVM mock servers.",
+        "description": "Read-only calendar and organizer tools.",
         "headers": {
           "Authorization": "Bearer {{ .secrets[\"JCLAW_PORT_READ_TOKEN\"] }}"
         },

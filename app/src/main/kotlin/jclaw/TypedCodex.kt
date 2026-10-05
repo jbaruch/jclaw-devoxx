@@ -26,6 +26,8 @@ import kotlin.time.Duration.Companion.minutes
  * `codex exec --output-schema`, then parses the final successful turn as O.
  */
 object TypedCodex {
+    val model = System.getenv("JCLAW_CODEX_MODEL") ?: "gpt-6.1-sol"
+    val reasoningEffort = System.getenv("JCLAW_CODEX_EFFORT") ?: "low"
     private val json = Json // Strict JSON: unknown fields and malformed values fail.
 
     fun <I : Any, O : Any> agent(
@@ -46,7 +48,7 @@ object TypedCodex {
             .timeout(3.minutes)
             .flags { _, _ ->
                 listOf(
-                    "exec", "--json", "--skip-git-repo-check", "--ephemeral",
+                    "exec", "--model", model, "-c", "model_reasoning_effort=\"$reasoningEffort\"", "--json", "--skip-git-repo-check", "--ephemeral",
                     "--ignore-user-config", "--ignore-rules",
                     "--sandbox", "read-only",
                     "-c", "approval_policy=\"never\"",
@@ -78,7 +80,14 @@ object TypedCodex {
             error("Codex failed: ${it.message}")
         }
         val exit = events.filterIsInstance<CliEvent.Exit>().lastOrNull()
-        check(exit?.code == 0) { "Codex did not exit successfully (exit ${exit?.code})." }
+        check(exit?.code == 0) {
+            val reason = events.filterIsInstance<CliEvent.Stdout>().mapNotNull { event ->
+                runCatching { json.parseToJsonElement(event.content).jsonObject }.getOrNull()
+            }.filter { it.type() == "error" || it.type() == "turn.failed" }.mapNotNull {
+                (it["message"] as? JsonPrimitive)?.content ?: (it["error"] as? JsonObject)?.get("message")?.jsonPrimitive?.content
+            }.lastOrNull()
+            "Codex did not exit successfully (exit ${exit?.code})." + (reason?.let { " $it" } ?: "")
+        }
 
         val output = events.filterIsInstance<CliEvent.Stdout>()
             .filter { it.content.isNotBlank() }

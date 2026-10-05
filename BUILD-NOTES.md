@@ -497,3 +497,52 @@ Run it with `python3 tools/test-launcher.py`.
 This verifies the updated UI and launcher. The earlier complete provider-run
 evidence remains the reference for the workflow. Baruch's review of the current
 complete demo is still in progress; step branches have not been prepared.
+
+## Seven-round audit and pragmatic Judge (October 4)
+
+The prior successful October 2 runs used isolated three-seed snapshots. They did
+not establish that the later four-record personal history would work; that scope
+was previously overstated. The reported seven-candidate rejection was a real demo
+failure. This review changed the automatic criterion to a usable CREDIBLE proposal
+with concrete blockers, identical with and without Human. It also fixed Judge
+requiring avoided-excuse notes inside the email even though the app displays them
+separately. Reused reasons and internal notes still fail live regression review.
+
+All seven modes now run from the complete application. `./jclaw prepare-demo`
+creates a named fictional session without clearing any existing records;
+`./jclaw demo 1` through `demo 7` enable only their intended capabilities. Rounds
+3/4 share native file-backed ChatMemory and sent history; round 5 has separate
+seeds; rounds 6/7 share confirmed sends. Early sends use application-created IDs
+and the same matching-receipt validation. Model pins and low Judge reasoning are
+explicit. The TamboUI remains a general assistant with actual event topology,
+tool results and task-specific review fields; backend implementation labels are
+removed from its product copy and the Port connector/workflow labels.
+
+[The live audit](validation/rounds/README.md) records all seven provider runs,
+round 5 without Human/send, Hold, mixed model/human refinements, exact receipt/store,
+restart recall, the four-record case, prepared unavailable-Judge and wrong-receipt
+failures. Successful scripted scenarios took about 16–112 seconds including launch
+and retrieval, not a timing guarantee or framework comparison. Backend Jev/CLI
+observations are independently retrieved; CLI costs remain unreported. Native
+TamboUI paste, human revision, final approval and exact literal persistence also
+completed. 72 app tests pass. Step branches and slide artwork remain on hold.
+
+The Python launcher supervisor fixes the post-merge Copilot signal-cleanup finding:
+INT/TERM/HUP reach the child, and runtime files are retained until it exits. The
+integration check verifies each signal and overlapping launches. A native UI
+shutdown export gap was caught during this audit; the following rehearsal records
+its actual backend result rather than equating “enabled” with arrival.
+
+Port's deployed review skill, worker prompts and visible connector/workflow labels
+were updated by subset property writes and read back exactly. Model/provider pairs,
+credentials, relations, graph edges and sent history were preserved. The current
+Port graph remains 71 nodes / 98 connections. This update is not a new timed Port
+rehearsal; its earlier completed run remains the prepared closing example.
+
+The native exit follow-up now passed: round 7 recalled the exact native round-6
+message in 11 seconds, made no action/history write and exited to the restored
+terminal. Backend trace `cac56d1211d5dd052b101838b6e4f472` contains the actual
+Jev CHAT response, Gemini call and quoted literal record. A JVM shutdown hook
+now closes the agent and flushes when Ctrl+C arrives as SIGINT rather than a
+Toolkit key event; normal UI exit shares that once-only cleanup. The original
+pre-fix round-6 trace is not claimed to have arrived.

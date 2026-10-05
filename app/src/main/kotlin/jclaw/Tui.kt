@@ -31,6 +31,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlin.io.path.Path
 import kotlin.system.exitProcess
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * General-purpose assistant with a TamboUI execution dashboard.
@@ -44,26 +45,26 @@ import kotlin.system.exitProcess
  * the tamboui render-thread-discipline rule.
  */
 fun main(args: Array<String>) {
-    JclawTui.quietStdStreams(Path("jclaw-tui.log"))
+    JclawTui.quietStdStreams(Path(System.getenv("JCLAW_TUI_LOG") ?: "jclaw-tui.log"))
     val apiKey = requireNotNull(System.getenv("GOOGLE_API_KEY")) { "GOOGLE_API_KEY is not set" }
     val naive = System.getenv("JCLAW_NAIVE") == "1"
+    val stage = DemoStage.configured()
     val reviewOnly = System.getenv("JCLAW_REVIEW_ONLY") == "1"
-    val jev = JevClient.configured()
+    val jev = if (stage.workflow) JevClient.configured() else null
 
     val submissions = Channel<String>(Channel.UNLIMITED)
     val tui = JclawTui(
         onSubmit = { submissions.trySend(it) },
-        features = listOfNotNull("MCP", "MEMORY".takeUnless { naive }, "SKILLS", "JEV".takeIf { jev != null }, "WORKFLOW",
-            "GUARDRAILS".takeUnless { reviewOnly }, "LANGFUSE".takeIf { Observability.enabled }),
-        mode = when {
-            reviewOnly -> "KOOG / R5 WORKFLOWS"
-            System.getenv("JCLAW_ROUND") == "7" -> "KOOG / R7 OBSERVABILITY"
-            else -> "KOOG / R6 GUARDRAILS"
-        },
+        features = listOfNotNull("MCP".takeIf { stage.tools }, "MEMORY".takeIf { stage.memory && !naive },
+            "SKILLS".takeIf { stage.skills }, "JEV".takeIf { jev != null }, "WORKFLOW".takeIf { stage.workflow },
+            "GUARDRAILS".takeIf { stage.human }, "LANGFUSE".takeIf { Observability.enabled && stage.number == 7 }),
+        mode = "KOOG / R${stage.number} ${stage.title}",
         reviewOnly = reviewOnly,
         telemetryEnabled = Observability.enabled,
         candidateLimit = jclaw.domain.WorkflowPolicy.maxCandidates,
-        providerLegend = "${if (jev != null) jclaw.domain.JevProtocol.model else Models.flash.id} routing · Gemini assistant · Claude / Codex workers · mock actions",
+        traceCoverage = if (stage.workflow) "Agent/API calls and CLI node handoffs" else "Agent, model and invoked tool calls",
+        providerLegend = if (stage.workflow) "${if (jev != null) jclaw.domain.JevProtocol.model else Models.flash.id} routing · ${Models.flash.id} assistant · ${CliCritic.draftModel} / ${TypedCodex.model} workers · actions"
+            else "${Models.flash.id} assistant${if (stage.tools) " · MCP tools" else " · text only"}",
     )
 
     // The agent is created inside its scope; closing it must happen from the TUI's shutdown path.
@@ -72,28 +73,41 @@ fun main(args: Array<String>) {
     val agentScope = CoroutineScope(SupervisorJob() + Dispatchers.IO + CoroutineName("jclaw-agent"))
     agentScope.launch {
         try {
-            val mcp = Mcp.boot("calendar-mcp", "organizer-mcp", onStderr = { tui.trace(it, TraceKind.TOOL_CALL) })
+            val mcp = Mcp.boot(*if (stage.tools) arrayOf("calendar-mcp", "organizer-mcp") else emptyArray(),
+                onStderr = { tui.trace(it, TraceKind.TOOL_CALL) })
             // Also clean up if skills, embeddings or agent construction fail during startup.
             closeAgent = { jev?.close(); mcp.close() }
-            val skills = AgentSkills.discover(trace = { tui.trace(it, TraceKind.TOOL_CALL) })
-            val memory = Memory.open(
+            val skills = if (stage.skills) AgentSkills.discover(trace = { tui.trace(it, TraceKind.TOOL_CALL) }) else AgentSkills.EMPTY
+            val memory = if (stage.memory) Memory.open(
                 LLMEmbedder(GoogleLLMClient(apiKey), GoogleModels.Embeddings.GeminiEmbedding001),
                 trace = { tui.trace(it.trim(), TraceKind.TOOL_CALL) },
-            )
+            ) else null
 
             tui.trace("mode: " + if (naive) "NAIVE — less context, no memory" else "DOMAIN-MODELLED", TraceKind.SUBGRAPH_START)
-            tui.trace("models: ${if (jev != null) jclaw.domain.JevProtocol.model else Models.flash.id} decisions · Gemini chat → Claude subscription → Codex subscription", TraceKind.SUBGRAPH_START)
+            tui.trace(if (!stage.workflow) "models: ${Models.flash.id} conversational agent" else "models: ${if (jev != null) jclaw.domain.JevProtocol.model else Models.flash.id} decisions · ${Models.flash.id} chat → ${CliCritic.draftModel} → ${TypedCodex.model} (${TypedCodex.reasoningEffort})", TraceKind.SUBGRAPH_START)
 
-            val conversation = Conversation("${Persona.PROMPT}\n${skills.prompt}")
+            val conversation = Conversation("${Persona.PROMPT}\n${skills.prompt}",
+                System.getenv("JCLAW_CHAT_FILE")?.takeIf { stage.memory }?.let { java.nio.file.Path.of(it) })
+            var earlyDelivered = false
+            val earlyTools = if (!stage.workflow) earlyRoundTools(stage, mcp, EarlyActions(mcp, memory,
+                delivered = { receipt ->
+                    earlyDelivered = true
+                    tui.chat("Delivery confirmed: ${receipt.callId}", ChatKind.OK)
+                    tui.deliveryConfirmed(receipt.callId, stage.memory)
+                    tui.trace("Receipt: $receipt", TraceKind.TOOL_CALL)
+                }, memorySaved = { tui.memorySaved() }, memoryFailure = {
+                    tui.memoryFailed()
+                    tui.chat("Delivered, but memory save failed: ${it.message}", ChatKind.ERR)
+                }), skills) else mcp.registry + skills.registry
             val agent = AIAgent(
                 id = "j-claw",   // names the agent spans in Langfuse; a UUID otherwise
                 promptExecutor = simpleGoogleAIExecutor(apiKey),
                 agentConfig = AIAgentConfig.withSystemPrompt(
                     prompt = conversation.systemPrompt,
                     llm = Models.flash,
-                    maxAgentIterations = 200,
+                    maxAgentIterations = if (stage.workflow) 200 else 30,
                 ),
-                strategy = jclawStrategy(mcp, naive, skills,
+                strategy = if (!stage.workflow) earlyRoundStrategy(stage, earlyTools.tools) else jclawStrategy(mcp, naive, skills,
                     jev = jev, memory = memory, proposedFlavors = conversation::proposedFlavors,
                     onDecision = { evidence ->
                         tui.decision(evidence.lines())
@@ -112,7 +126,7 @@ fun main(args: Array<String>) {
                         })
                         if (stage != "human" && state == PipelineStageState.STARTED) tui.startBusy() else tui.stopBusy()
                     },
-                    humanReview = if (reviewOnly) null else { attempt ->
+                    humanReview = if (!stage.human || reviewOnly) null else { attempt ->
                         val request = requireNotNull(attempt.request)
                         val ready = JclawResult.ReadyToSend(attempt.plan, request)
                         tui.candidateIdentity(sendEnvelope(ready).candidateId)
@@ -136,7 +150,7 @@ fun main(args: Array<String>) {
                         }
                     },
                 ),
-                toolRegistry = mcp.registry + skills.registry,
+                toolRegistry = earlyTools,
             ) {
                 install(ChatMemory) { conversation.configure(this) }
 
@@ -145,14 +159,13 @@ fun main(args: Array<String>) {
                     langfuse(
                         round = System.getenv("JCLAW_ROUND")?.toIntOrNull() ?: if (reviewOnly) 5 else 6,
                         if (naive) "naive" else "domain-modelled",
-                        "critic:codex", "drafter:claude-code",
-                        metadata = mapOf("model" to Models.flash.id, "decider" to if (jev != null) jclaw.domain.JevProtocol.model else Models.flash.id,
-                            "drafter" to "claude-code", "critic" to "codex"),
+                        *stage.telemetryTags(),
+                        metadata = stage.telemetryMetadata(if (jev != null) jclaw.domain.JevProtocol.model else Models.flash.id),
                     )
                 }
-                if (!naive) install(LongTermMemory) {
+                if (stage.memory && !naive) install(LongTermMemory) {
                     retrieval {
-                        storage = memory
+                        storage = requireNotNull(memory)
                         searchStrategy = SimilaritySearchStrategy(topK = 5)
                     }
                 }
@@ -164,6 +177,7 @@ fun main(args: Array<String>) {
                         tui.traceStage(it.subgraph.name, "Koog subgraph", TraceStageState.COMPLETED)
                     }
                     onToolCallStarting { tui.toolCall(it.toolName, it.toolArgs.toString()) }
+                    onToolCallCompleted { tui.trace("↩ ${it.toolName}: ${it.toolResult}", TraceKind.TOOL_CALL) }
                     onLLMCallStarting {
                         tui.trace("LLM ${it.model.id}", TraceKind.LLM)
                         tui.startBusy()
@@ -191,12 +205,14 @@ fun main(args: Array<String>) {
                 var deliveryAttempted = false
                 try {
                     tui.resetFlow(prompt)
+                    earlyDelivered = false
                     val result = conversation.run(agent, prompt)
                     tui.finishTraceStages(TraceStageState.COMPLETED)
                     if (result is JclawResult.ChatReply) {
                         tui.chat("j-claw: ${result.text}", ChatKind.JCLAW)
                         tui.work(result.text)
-                        tui.outcome(DemoOutcome.CHAT, "Assistant reply complete")
+                        tui.outcome(if (earlyDelivered) DemoOutcome.DELIVERED else DemoOutcome.CHAT,
+                            if (earlyDelivered) "Receipt confirmed" else "Assistant reply complete")
                         continue
                     }
                     if (result is JclawResult.Blocked) {
@@ -228,9 +244,9 @@ fun main(args: Array<String>) {
                     }
                     check(result is JclawResult.HumanApproved) { "Human approval is required" }
                     deliveryAttempted = true
-                    tui.outcome(DemoOutcome.SENDING, "Sending the exact approved candidate to the organizer mock")
+                    tui.outcome(DemoOutcome.SENDING, "Sending the exact approved candidate to the organizer")
                     tui.stage("send", StageState.ACTIVE)
-                    sendAndRemember(ready, mcp, memory,
+                    sendAndRemember(ready, mcp, requireNotNull(memory),
                         onDelivered = { receipt ->
                             tui.chat("j-claw: delivered. $receipt", ChatKind.OK)
                             tui.deliveryConfirmed(receipt.callId)
@@ -267,6 +283,16 @@ fun main(args: Array<String>) {
         }
     }
 
+    // A terminal may deliver Ctrl+C as SIGINT instead of a toolkit key event.
+    // JVM shutdown skips this function's finally, so drain telemetry there too.
+    val cleanedUp = AtomicBoolean(false)
+    fun cleanup() {
+        if (!cleanedUp.compareAndSet(false, true)) return
+        runBlocking { agentScope.coroutineContext[Job]?.cancelAndJoin() }
+        closeAgent?.let { runBlocking { it() } }
+    }
+    val shutdownHook = Thread(::cleanup, "jclaw-tui-shutdown")
+    Runtime.getRuntime().addShutdownHook(shutdownHook)
     try {
         tui.run()
     } catch (t: Throwable) {
@@ -275,9 +301,8 @@ fun main(args: Array<String>) {
         t.printStackTrace()
         exitProcess(1)
     } finally {
-        runBlocking { agentScope.coroutineContext[Job]?.cancelAndJoin() }
         // Closing ends the spans Koog still holds; the flush ships them (see Observability).
-        closeAgent?.let { runBlocking { it() } }
+        cleanup()
         // Same reason as the CLI front end: the MCP reader thread will not let the
         // JVM exit once the TUI has been closed.
         exitProcess(0)

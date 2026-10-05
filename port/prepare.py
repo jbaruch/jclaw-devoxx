@@ -85,11 +85,13 @@ def build_agents(config):
          'organizer from that result. Copy the returned event ID verbatim. Never invent an ID or finalize '
          'after only search_tools: tool definitions are not calendar evidence. Both actual reads are '
          'mandatory. The workflow canonicalizes the request and adds confirmed sent history.', READ_TOOLS,
-         'Identify the Basic AI Proficiency Training and its organizer from the mock calendar.'),
+         'Identify the Basic AI Proficiency Training and its organizer from the calendar.'),
         ('draft', 'j-claw · Draft & Refine',
          'Draft or refine a candidate from the supplied typed request, user context and critic feedback. '
          'Preserve the event and organizer, honor human feedback, and avoid both sent and proposed flavors. '
-         'Use supported facts. The organizer email and hallway script are literal outbound text: keep '
+         'Use concise, reasonably plausible text and fix concrete feedback with the smallest change. '
+         'Ordinary preparation for the supplied public AI-agent talk needs no independent proof. '
+         'Ask for an exception; do not assume permission. The organizer email and hallway script are literal outbound text: keep '
          'internal notes and avoided-excuse explanations out of both. Set fakeCalendarEventId=null. '
          'The workflow owns both critics, the shared six-refinement budget and human approval.', ['^$'],
          'Draft a decline from this request and user context; return the complete candidate.'),
@@ -249,7 +251,7 @@ def build_workflow(config,target,profile):
         edge(human_review,human_route);edge(human_route,'blocked','block')
         edge(human_route,f'a{depth+1}_refine' if depth<MAX_REFINEMENTS else 'blocked','refine')
         delivery=pre+'_deliver'
-        webhook(delivery,'Send + validate matching mock receipt','/deliver',proof(human,review))
+        webhook(delivery,'Send + validate matching receipt','/deliver',proof(human,review))
         edge(human,delivery,'approve')
         sent=output(delivery)+'.sentFact';receipt=output(delivery)+'.receipt'
         node(pre+'_remember','Write the confirmed sent fact',{'type':'UPSERT_ENTITY','blueprintIdentifier':'jclaw_sent_fact',
@@ -270,7 +272,7 @@ def build_workflow(config,target,profile):
         'asks to get out of, skip, avoid or decline training, including Basic AI Proficiency Training run by Dana. '
         'Pass the complete user request verbatim. Identify once, then Draft → Judge → Human critic. Either rejection feeds the same Refine node '
             'and returns through both critics. Six refinements total per request; exhaustion blocks. '
-            'Exact-candidate mock delivery and receipt-backed sent history. Port invokes APIs, not subscription CLIs.',
+            'Exact-candidate delivery and receipt-backed sent history.',
         'allowAnyoneToViewRuns':False,'nodes':nodes,'connections':edges}
 
 def build_dashboard():
@@ -376,8 +378,8 @@ def prepare(config,destination):
     entities.append({'blueprint':'skill','entities':skills})
     agents=build_agents(config)
     entities.append({'blueprint':'_ai_agent','entities':agents})
-    connector={'blueprint':'_mcp_server','entities':[{'identifier':'jclaw-read','title':'j-claw read-only mocks',
-        'properties':{'url':config['bridgeUrl'].rstrip('/')+'/mcp','description':'Read-only calendar and organizer from the same JVM mock servers.',
+    connector={'blueprint':'_mcp_server','entities':[{'identifier':'jclaw-read','title':'j-claw read tools',
+        'properties':{'url':config['bridgeUrl'].rstrip('/')+'/mcp','description':'Read-only calendar and organizer tools.',
             'headers':{'Authorization':'Bearer {{ .secrets["JCLAW_PORT_READ_TOKEN"] }}'},
             'allowed_tools':['jclaw-read_getCalendar','jclaw-read_getOrganizerSensitivity'],'exposed':True}}]}
     workflow=build_workflow(config,target,profile)

@@ -160,7 +160,7 @@ class ObservabilityTest : StringSpec({
             span.attributes["langfuse.observation.metadata.authentication"] shouldBe "subscription"
             span.attributes["langfuse.observation.metadata.application_prompt"] shouldBe CliCritic.codexPrompt(DeclineReview(request, input.plan))
             (span.attributes["langfuse.observation.metadata.application_prompt"] as String) shouldContain
-                "Is this the best available\nexcuse and plan for his situation?"
+                "Is this a usable proposal?"
             span.attributes.containsKey("gen_ai.usage.input_tokens") shouldBe false
             span.attributes.containsKey("langfuse.observation.cost_details") shouldBe false
         }

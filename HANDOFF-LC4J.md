@@ -33,8 +33,9 @@ presentation assets are excluded.
 Wait for Baruch to run and review the complete demo, then derive seven round
 branches by removing features from that complete build.
 Document their commands and capability boundaries. Do not maintain seven diverging
-partial implementations. The Koog step branches are still pending; the completed
-application and this handoff are the behavior reference.
+partial implementations. The Koog step branches are still pending; `./jclaw demo 1` through `demo 7`
+already expose every round from the complete app. Match those capability modes
+without requiring branches to rehearse. This handoff is the behavior reference.
 
 ## The exact shared task
 
@@ -149,11 +150,34 @@ avoided-excuse explanations outside the literal outbound message and hallway scr
 The Koog demo uses Jev API for intent/event decisions, code for canonical request
 assembly, Gemini API for chat, Claude's subscription CLI for draft/refine, and
 Codex's subscription CLI for Judge. Jev is pinned to `jev-1.13.0`; Gemini is selected by
-`JCLAW_FLASH` (default profile 3.7); CLI brands are not exact model IDs. Record your
+`JCLAW_FLASH` (default profile 3.7, actual `gemini-3.7-flash`). The reviewed pins
+are `claude-opus-4-6` for Draft/Refine and `gpt-6.1-sol` with low reasoning for
+Judge; environment overrides are explicit. CLI brand names alone are insufficient. Record your
 actual framework/model/CLI versions, authentication and transport. Agree any
 differences with Viktor/Baruch before comparing behavior or cost. Preserve the
 roles and disclose any API-versus-subscription-CLI differences. Use LangChain4j
 Agentic for orchestration; label custom transport adapters accurately.
+
+## Automatic quality criterion
+
+Judge evaluates a usable, reasonably plausible proposal in rounds 5–7. CREDIBLE
+is sufficient; it need not be airtight. The absence of guaranteed organizer consent
+is not a blocker for a respectful request. Ordinary preparation for the supplied
+public-talk context is a permissible inference. Optional wording improvements are
+advice, not rejection. Reject only concrete contradictions, wrong targets, reused
+or explicitly excluded reasons, violated constraints, internal notes/placeholders,
+unperformed permissions, insults, invented unrelated emergencies or plainly
+implausible text. Give at most two actionable blockers and the smallest repair.
+
+The application visibly explains previously sent/proposed flavors separately from
+the literal email and hallway text. Judge must not require those internal notes
+inside the outbound message to satisfy “tell me which ones you're avoiding.”
+The same standard applies without Human; it does not defer automatic correctness
+to the human. Invalid or unavailable review fails closed.
+
+See `CliCritic.kt`, the shared review descriptions and the actual accept/reuse/note
+regressions in [validation/rounds](validation/rounds/README.md). They caught a real
+moving-goalpost defect; deterministic branch tests alone cannot validate judgment.
 
 ## The human is critic two
 
@@ -234,7 +258,9 @@ repeated visits; do not configure a fixed calendar or decline topology. Review a
 delivery fields appear only for the task currently producing a candidate. Drive candidate,
 verdict, human state, timed trace, receipt and memory-write displays from actual
 LangChain4j/application events. Set the mode to LangChain4j and the real
-`providerLegend`. Adjust remaining Koog/Codex or coverage captions to your behavior.
+`providerLegend`. Adjust remaining Koog/Codex or coverage captions to your behavior. Keep backend
+implementation labels such as “mock” out of the product UI, prompts and receipt
+status; disclose the fictional backend in technical documentation instead.
 
 Use the wide dashboard at 120+ columns and 32+ rows. F1–F4 expose Assistant,
 Workspace, Activity and Evidence views. Preserve input across view changes/resize, marshal
@@ -270,8 +296,8 @@ Inspect the bundled `app/src/test/kotlin/jclaw/` references, especially
 checks using Viktor's framework and test stack. Traces must show actual inputs,
 outputs and attempts; API usage and CLI timing do not imply equivalent token costs.
 
-Return the repository/commit, pinned versions, launch commands, seven-round branch
-mapping, test results, live rehearsal evidence and remaining limits. Identify
+Return the repository/commit, pinned versions, launch commands, seven-round
+capability mapping (branches only after Baruch's approval), test results, live rehearsal evidence and remaining limits. Identify
 model/transport differences needing speaker agreement. Compilation or a printed
 graph alone does not establish demo readiness.
 
@@ -368,3 +394,15 @@ TamboUI process retrieved the saved message. Backend traces include actual Jev
 and Human nodes. See [the live receipt](validation/jev/results/live-six-refinements.json).
 These are agent-operated mock rehearsals of the complete Koog app, not a paired
 benchmark or evidence of a completed LangChain4j implementation.
+
+## October 4 Koog rehearsal reference
+
+[All seven rounds](validation/rounds/README.md) ran with real configured providers,
+with the final quality policy. This includes no-action rounds, actual MCP send,
+round 3→4 conversation restart, skill reads at eleven/four, round 5's approved
+proposal without Human, Hold, mixed Judge/Human refinements and one exact delivery,
+round 7 recall, and the four-record snapshot that defeated the prior stricter Judge.
+72 app tests pass. Native TamboUI paste, human revision and confirmed delivery were
+also inspected. Model and timing evidence is scoped to those runs, not a promise
+of identical future model behavior. The full paired show and projector remain
+speaker rehearsal work.
